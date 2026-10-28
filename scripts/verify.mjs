@@ -55,6 +55,7 @@ try {
       meanDecisionMs:result.logs.filter(x=>x.type==='decision').reduce((n,x)=>n+x.decisionMs,0)/Math.max(1,result.status.decisions)};
     results.push(summary);console.log(JSON.stringify(summary));
     await writeFile(path.join(reports,`attempt-${i}.ndjson`),result.logs.map(x=>JSON.stringify(x)).join('\n'));
+    await page.waitForFunction(()=>document.querySelector('#flavio-bot-panel')?.shadowRoot.querySelector('#status')?.textContent===window.__flavioBot.status.message);
     await page.screenshot({path:path.join(reports,`attempt-${i}.png`)});
     if(result.state==='cabin'&&process.env.ALL_ATTEMPTS!=='1')break;
     if(result.state==='cabin'){

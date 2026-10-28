@@ -2,7 +2,7 @@
 
 Protótipo de um bot que lê o estado real de [cadeflavio.run](https://cadeflavio.run/?debug), prevê colisões e joga usando comandos de teclado.
 
-**Resultado observado:** no teste final registrado em `reports/validation.json`, atravessou a ponte em 27,4 segundos, entrou na cabine com 4 vidas e fez 544 decisões. Duas execuções anteriores também chegaram à cabine, com 5 vidas; o relatório incluído corresponde à versão final, após a correção do controle manual. Isso comprova essas partidas, não uma taxa de vitória em todas as situações.
+**Resultado observado:** no teste final registrado em `reports/validation.json`, atravessou a ponte em 26,9 segundos, entrou na cabine com 2 vidas e fez 534 decisões. Três execuções anteriores também chegaram à cabine, com 5, 5 e 4 vidas. O relatório incluído corresponde à versão final, após a correção do controle manual. Isso comprova essas partidas, não uma taxa de vitória em todas as situações.
 
 ## Usar no Brave
 

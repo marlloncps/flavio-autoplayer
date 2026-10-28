@@ -11,7 +11,8 @@
 - Primeira partida real: cabine, 5 vidas, 28.342 ms, 552 decisões.
 - Segunda partida real (testes adicionais de parada/exportação): cabine, 5 vidas, 27.579 ms, 545 decisões.
 - Revisão independente encontrou um P2: uma tecla manual podia dessincronizar o conjunto de teclas do bot. Reproduzido no navegador com falha `Entrada manual não interrompeu o bot`; corrigido interrompendo em eventos confiáveis de setas/WASD. O teste correspondente passou na versão final.
-- Partida final após a correção: cabine, 4 vidas, 27.384 ms, 544 decisões, média de 2,28 ms por decisão. Resultado detalhado em `reports/validation.json`.
+- Primeira partida após a correção: cabine, 4 vidas, 27.384 ms, 544 decisões, média de 2,28 ms por decisão.
+- Última execução, aguardando a atualização do painel antes da captura de tela: cabine, 2 vidas, 26.890 ms, 534 decisões, média de 2,42 ms por decisão. Este é o resultado detalhado em `reports/validation.json` e na imagem distribuída. As diferenças entre partidas mostram a influência do tempo entre quadros; não se afirma vitória sem perda de vidas.
 - Validação final de navegador: F8, Escape, controle manual, tratamento de blur e exportação JSON passaram. O teste de blur despacha o evento; não é uma prova de todas as condições de foco do sistema operacional.
 - Observação menor da revisão: o botão de iniciar não reinicia após a cabine. A documentação explica a recarga da página para outra tentativa; não foi adicionada automação do diálogo.
 - Limite da validação: mesmo pacote injetado no Brave isolado, mas extensão não instalada no perfil pessoal do usuário. Manifesto e carregador inspecionados e testados separadamente.

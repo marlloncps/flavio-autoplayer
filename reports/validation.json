@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-28T13:27:25.220Z",
+  "date": "2026-10-28T13:30:25.082Z",
   "url": "https://cadeflavio.run/?debug",
   "browser": "isolated headless Brave",
   "emergency": {
@@ -14,14 +14,14 @@
     {
       "attempt": 1,
       "state": "cabin",
-      "x": 6168.477728150068,
-      "y": 205.8975739499995,
-      "lives": 4,
+      "x": 6165.808627100062,
+      "y": 200.2247728999998,
+      "lives": 2,
       "progress": 100,
-      "durationMs": 27384,
-      "decisions": 544,
+      "durationMs": 26890,
+      "decisions": 534,
       "message": "Ponte concluída — entrou na cabine!",
-      "meanDecisionMs": 2.2783088234992808
+      "meanDecisionMs": 2.420599250942608
     }
   ],
   "wins": 1
