@@ -23,6 +23,24 @@ try {
   await page.waitForTimeout(250);await page.keyboard.press('F8');
   const emergency=await page.evaluate(()=>({stopped:!window.__flavioBot.status.running,message:window.__flavioBot.status.message}));
   if(!emergency.stopped)throw new Error('F8 não interrompeu o bot');
+  await panel.getByRole('button',{name:'Iniciar tentativa',exact:true}).click();
+  await page.keyboard.press('ArrowRight');
+  const manualStopped=await page.evaluate(()=>!window.__flavioBot.status.running);
+  if(!manualStopped)throw new Error('Entrada manual não interrompeu o bot');
+  await panel.getByRole('button',{name:'Iniciar tentativa',exact:true}).click();
+  await page.keyboard.press('Escape');
+  const escapeStopped=await page.evaluate(()=>!window.__flavioBot.status.running);
+  if(!escapeStopped)throw new Error('Escape não interrompeu o bot');
+  await panel.getByRole('button',{name:'Iniciar tentativa',exact:true}).click();
+  await page.evaluate(()=>window.dispatchEvent(new Event('blur')));
+  const blurStopped=await page.evaluate(()=>!window.__flavioBot.status.running);
+  if(!blurStopped)throw new Error('Perda de foco não interrompeu o bot');
+  const downloadPromise=page.waitForEvent('download');
+  await panel.getByRole('button',{name:'Baixar registros',exact:true}).click();
+  const download=await downloadPromise;
+  await download.saveAs(path.join(reports,'export-check.json'));
+  const exported=JSON.parse(await readFile(path.join(reports,'export-check.json'),'utf8'));
+  if(!Array.isArray(exported.logs)||exported.status.running)throw new Error('Exportação inválida');
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.__game);
   await page.addScriptTag({content:await readFile(path.join(root,'extension/bot.js'),'utf8')});
@@ -45,6 +63,7 @@ try {
     }
   }
   await writeFile(path.join(reports,'validation.json'),JSON.stringify({date:new Date().toISOString(),url:'https://cadeflavio.run/?debug',
-    browser:'isolated headless Brave',emergency,results,wins:results.filter(r=>r.state==='cabin').length},null,2));
+    browser:'isolated headless Brave',emergency,manualStopped,escapeStopped,blurStopped,exportVerified:true,
+    results,wins:results.filter(r=>r.state==='cabin').length},null,2));
   if(!results.some(r=>r.state==='cabin'))process.exitCode=1;
 } finally {await browser.close();}

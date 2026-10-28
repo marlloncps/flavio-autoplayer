@@ -228,8 +228,15 @@ function installBot(win,doc) {
     const link=doc.createElement('a');link.href=url;link.download='flavio-bot-partida.json';link.click();
     win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);
   });
-  const emergency=e=>{if(e.key==='Escape'||e.key==='F8'){controller.stop('Interrompido por '+e.key);update();}};
+  const movementKeys=new Set(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d']);
+  const emergency=e=>{
+    if(e.key==='Escape'||e.key==='F8'){controller.stop('Interrompido por '+e.key);update();}
+    else if(controller.status.running&&e.isTrusted&&movementKeys.has(e.key.toLowerCase())){
+      controller.stop('Interrompido: controle manual detectado');update();
+    }
+  };
   win.addEventListener('keydown',emergency,true);
+  win.addEventListener('keyup',emergency,true);
   win.addEventListener('blur',()=>{controller.stop('Interrompido: janela sem foco');update();});
   doc.addEventListener('visibilitychange',()=>{if(doc.hidden){controller.stop('Interrompido: aba oculta');update();}});
   win.addEventListener('pagehide',()=>controller.stop('Página fechada'));
