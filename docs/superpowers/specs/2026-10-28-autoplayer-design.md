@@ -26,3 +26,7 @@ HTML público obtido em 2026-10-28. Script inline extraído sem alteração para
 ## Emenda autorizada — controle de velocidade, versão 0.3
 
 Pedido posterior do usuário: manipular e aumentar a velocidade do personagem. Isso substitui exclusivamente a restrição original de não escrever em `player.speed`: um controle explícito 1×/2×/3× pode alterar esse campo e restaurá-lo ao valor capturado na ativação. O padrão continua 1×; nenhuma alteração é aplicada ao instalar o painel. Vidas, posição, inimigos, cancela e atalhos de vitória permanecem fora das escritas autorizadas. Ajustes ficam identificados no painel e nos registros como velocidade modificada.
+
+### Ampliação solicitada — versão 0.4
+
+O usuário pediu explicitamente 20×. O limite do ajuste passa a 20 e o painel inclui esse botão adicional, preservando padrão 1×, restauração e identificação de velocidade modificada. Nenhuma outra escrita no motor foi autorizada.

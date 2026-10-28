@@ -4,6 +4,6 @@ const planner=await readFile(new URL('src/planner.js',root),'utf8');
 const overlay=await readFile(new URL('src/overlay.js',root),'utf8');
 const speed=await readFile(new URL('src/speed.js',root),'utf8');
 const controller=await readFile(new URL('src/controller.js',root),'utf8');
-const bundle=`/* Flávio Autoplayer 0.3.0 — local, sem serviços externos */\n(()=>{\n'use strict';\n${planner.replaceAll('export function ','function ')}\n${overlay.replaceAll('export function ','function ')}\n${speed.replaceAll('export function ','function ')}\n${controller.replace(/^import .*\n/gm,'').replaceAll('export function ','function ')}\ninstallBot(window,document);\n})();\n`;
+const bundle=`/* Flávio Autoplayer 0.4.0 — local, sem serviços externos */\n(()=>{\n'use strict';\n${planner.replaceAll('export function ','function ')}\n${overlay.replaceAll('export function ','function ')}\n${speed.replaceAll('export function ','function ')}\n${controller.replace(/^import .*\n/gm,'').replaceAll('export function ','function ')}\ninstallBot(window,document);\n})();\n`;
 await writeFile(new URL('extension/bot.js',root),bundle);
 console.log('Extensão criada em extension/');

@@ -75,7 +75,8 @@ export function installBot(win,doc) {
     button.stop{background:#ffb9a8}button.export{background:#bbd5ef}#status{min-height:38px}#stats{font-variant-numeric:tabular-nums}
     button.visual{background:#253b50;color:#cce5fa;padding:6px 10px;font-size:12px}
     button[aria-pressed="true"]{box-shadow:inset 0 0 0 1px #65f5c4}
-    .speed-row{display:flex;gap:5px;margin:6px 0 2px}.speed-row button{flex:1;background:#263b4d;color:#d9e9f5;font-size:12px;padding:6px 4px;margin:0}
+    .speed-row{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:5px;margin:6px 0 2px}.speed-row button{background:#263b4d;color:#d9e9f5;font-size:12px;padding:6px 4px;margin:0}
+    .speed-row button[data-speed="20"]{background:#502839;color:#ffd6e5}
     #speed-summary{color:#8ee8c7;font-size:11px;margin:5px 0 8px}
     :host(.recording){width:250px} :host(.recording) section{padding:12px;background:#0a1420de}
     :host(.recording) .controls,:host(.recording) .help,:host(.recording) .subtitle{display:none}
@@ -86,7 +87,7 @@ export function installBot(win,doc) {
     <p id="speed-summary">Velocidade original · 1×</p>
     <div class="controls">
     <small>Velocidade do personagem</small><div class="speed-row">
-    <button data-speed="1" aria-pressed="true">1× original</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button></div>
+    <button data-speed="1" aria-pressed="true">1× original</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button><button data-speed="20" aria-pressed="false" title="20× experimental">20×</button></div>
     <button id="start">Iniciar tentativa</button><button class="stop" id="stop">Parar</button>
     <button class="export" id="export">Baixar registros</button>
     <button class="visual" id="visual" aria-pressed="true">Caixas: ligadas · V</button></div>
@@ -126,7 +127,7 @@ export function installBot(win,doc) {
   });
   root.querySelector('#stop').addEventListener('click',()=>{controller.stop();update();});
   root.querySelector('#export').addEventListener('click',()=>{
-    const text=JSON.stringify({version:'0.3.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier},status:controller.status,logs:controller.logs},null,2);
+    const text=JSON.stringify({version:'0.4.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier},status:controller.status,logs:controller.logs},null,2);
     const url=win.URL.createObjectURL(new win.Blob([text],{type:'application/json'}));
     const link=doc.createElement('a');link.href=url;link.download='flavio-bot-partida.json';link.click();
     win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);

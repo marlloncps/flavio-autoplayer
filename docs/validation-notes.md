@@ -46,3 +46,10 @@
 - Partidas reais com a nova opção: 2× chegou à cabine com 5 vidas em 14.749 ms; 3× com 5 vidas em 8.800 ms. Botão original e recarga restauraram 245 unidades/s. Relatório em `reports/speed-validation.json`.
 - Essas partidas aceleradas têm uma regra modificada; os relatórios anteriores de velocidade original continuam preservados.
 - Revisão independente do controle de velocidade: sem achados acionáveis; padrão sem escrita, restauração, não acumulação e identificação no painel confirmados. O revisor executou a suíte de 25 testes com sucesso.
+
+## Velocidade 20× — versão 0.4
+
+- Pedido explícito do usuário: incluir velocidade 20×. Limite ampliado para 20, com um botão adicional no painel; padrão/restauração permanecem 1×.
+- Teste novo confirma 2×→20× sem acumulação (245→4.900) e retorno direto a 245. Suíte de 26 testes passou; bundle gerado e sintaxe verificados.
+- Partida real a 20×: entrada na cabine, 4 vidas, 100%, 1.496 ms. O registro de decisões contém velocidade 4.900. Restauração pelo botão e recarga para 245 confirmadas.
+- Relatório separado `reports/speed20-validation.json` preserva os resultados anteriores de 1×/2×/3×. Nenhuma alteração foi feita no decisor ou na física de colisões do jogo; o único campo de jogo escrito continua sendo player.speed.

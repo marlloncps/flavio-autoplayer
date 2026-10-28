@@ -5,6 +5,9 @@ import path from 'node:path';
 const require=createRequire(import.meta.url);
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=fileURLToPath(new URL('../',import.meta.url));
+const levels=(process.env.SPEED_TEST_MULTIPLIERS||'2,3').split(',').map(Number);
+const reportPrefix=process.env.SPEED_REPORT_PREFIX||'speed';
+if(!levels.every(n=>Number.isFinite(n)&&n>=1&&n<=20)||!/^[a-z0-9-]+$/.test(reportPrefix))throw new Error('Configuração de teste inválida.');
 const browser=await chromium.launch({headless:true,chromiumSandbox:true,
   executablePath:process.env.BROWSER_PATH||'/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
   ignoreDefaultArgs:['--unsafely-disable-devtools-self-xss-warnings','--enable-unsafe-swiftshader'],args:['--mute-audio','--disable-background-timer-throttling']});
@@ -32,7 +35,7 @@ try{
   // O motor limita o tempo por quadro. Compare a física por seu próprio relógio,
   // preservando a medição de tempo real como observação de desempenho.
   if(gameRatio<1.9||gameRatio>2.1)throw new Error('Velocidade no motor não dobrou: '+gameRatio);
-  for(const multiplier of [2,3]){
+  for(const multiplier of levels){
     await load();
     const before=await page.evaluate(()=>({x:window.__game.player.x,y:window.__game.player.y,lives:window.__game.player.lives,speed:window.__game.player.speed}));
     await panel.locator(`[data-speed="${multiplier}"]`).click();
@@ -43,7 +46,7 @@ try{
     await panel.locator(`[data-speed="${multiplier}"]`).click();
     const started=Date.now();await panel.getByRole('button',{name:'Iniciar tentativa',exact:true}).click();
     await page.waitForFunction(()=>window.__game.player.x>1000||window.__game.state!=='playing');
-    if(multiplier===2)await page.screenshot({path:path.join(root,'reports/speed-preview.png')});
+    if(multiplier===levels[0])await page.screenshot({path:path.join(root,`reports/${reportPrefix}-preview.png`)});
     await page.waitForFunction(()=>!window.__flavioBot.status.running,{},{timeout:125000});
     const result=await page.evaluate(()=>({state:window.__game.state,lives:window.__game.player.lives,speed:window.__game.player.speed,
       progress:window.__flavioBot.status.progress,logSpeed:window.__flavioBot.logs.find(x=>x.type==='decision')?.speed}));
@@ -55,7 +58,7 @@ try{
   await load();const fresh=await page.evaluate(()=>window.__game.player.speed);
   if(fresh!==245||errors.length)throw new Error('Falha após recarga ou erro de página: '+errors.join(';'));
   const report={date:new Date().toISOString(),measurements,observedSpeedRatio:ratio,gameSpeedRatio:gameRatio,resetVerified:true,reloadSpeed:fresh,results};
-  await writeFile(path.join(root,'reports/speed-validation.json'),JSON.stringify(report,null,2));
+  await writeFile(path.join(root,`reports/${reportPrefix}-validation.json`),JSON.stringify(report,null,2));
   console.log(JSON.stringify(report));
   if(results.some(r=>r.state!=='cabin'))process.exitCode=1;
 }finally{await browser.close();}

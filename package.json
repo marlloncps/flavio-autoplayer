@@ -1,6 +1,6 @@
 {
   "name": "flavio-autoplayer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Controlador local para a primeira etapa de cadeflavio.run",
   "type": "module",
