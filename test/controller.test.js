@@ -33,3 +33,8 @@ test('a ponte copia os dados sem modificar os objetos do jogo',()=>{
 test('iniciar repetidamente não duplica o controlador',()=>{
   const {c}=rig();c.start();c.start();assert.equal(c.logs.filter(x=>x.type==='start').length,1);c.stop();
 });
+test('a ponte inclui o novo perseguidor do tipo Constituição',()=>{
+  const g=game();g.consts=[{x:500,y:250,vx:-20,vy:10,r:15,age:1,alpha:1}];
+  const s=readSnapshot({__game:g});assert.equal(s.ghosts.length,1);assert.equal(s.ghosts[0].spectralKind,'constitution');
+  s.ghosts[0].x=999;assert.equal(g.consts[0].x,500);
+});

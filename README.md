@@ -1,4 +1,4 @@
-# Flávio — piloto local · modo visual
+# Flávio — piloto local · blaster · versão 0.5
 
 Protótipo de um bot que lê o estado real de [cadeflavio.run](https://cadeflavio.run/?debug), prevê colisões e joga usando comandos de teclado.
 
@@ -26,7 +26,7 @@ Para uma tentativa nova depois de chegar à cabine, recarregue a página e cliqu
 ## O que está fazendo
 
 - Usa o recurso `?debug` que o próprio jogo oferece (`window.__game`). Lê coordenadas e objetos internos, inclusive dados que podem estar fora da tela; não interpreta pixels.
-- Não altera vidas, posição, inimigos ou cancela, e não chama o atalho de vitória do jogo. A velocidade fica original por padrão; só é modificada ao clicar no controle experimental descrito abaixo.
+- Não altera vidas, posição ou cancela, e não chama o atalho de vitória do jogo. A velocidade fica original por padrão; só é modificada pelo controle experimental. O mod de arma remove os alvos atingidos pelos seus projéteis, conforme solicitado.
 - A cada aproximadamente 50 ms, avalia sequências curtas de movimento com uma previsão de cerca de 1,1 segundo.
 - Simula, sobre cópias, patrulhas, perseguição, viaturas, fantasmas, invulnerabilidade e abertura da cancela.
 - Envia apenas as mudanças nas teclas necessárias, inclusive movimento diagonal.
@@ -67,6 +67,25 @@ No teste registrado em `reports/speed-validation.json`, chegou à cabine com 5 v
 
 O teste separado de **20×** chegou à cabine em aproximadamente **1,5 s**, com 4 vidas, e confirmou a restauração para 1×. Resultado em `reports/speed20-validation.json`.
 
+## Blaster — versão 0.5
+
+O personagem agora carrega um blaster visível, com mira automática, projéteis luminosos, recuo e efeito de impacto. É um **mod local**: o jogo observado não tinha um sistema nativo de tiros. Um acerto remove somente o alvo atingido do motor, incluindo PRF, manifestantes, viaturas, fantasmas e o novo perseguidor Constituição. Não destrói a cancela nem o cenário.
+
+- **Iniciar tentativa:** o bot se move e atira automaticamente nos alvos próximos e visíveis.
+- **J:** segure para atirar manualmente, inclusive com o bot parado. O botão **Atirar · J** dispara uma vez. A mira continua automática.
+- **Auto: ligado/desligado:** controla o disparo automático do bot. O tiro manual continua disponível.
+- **Arma: ligada/desligada:** equipa ou desativa o blaster. Desativar cancela os projéteis em voo; alvos já removidos só retornam ao reiniciar/recarregar a partida.
+- **F8/Escape**, Parar, perda de foco e troca de aba interrompem o movimento do bot e cancelam o gatilho e os projéteis. Você pode voltar a atirar pressionando J novamente.
+- **V** esconde apenas as caixas; a arma e os tiros continuam visíveis. **G** recolhe os controles e mantém o contador de disparos/acertos.
+
+Os registros JSON incluem disparos, acertos, tipos de alvo e eventos de impacto. A atualização também reconhece o novo perseguidor Constituição na previsão e nas caixas. A validação usa a dificuldade normal do site observado em 28/10/2026.
+
+Se já usa a extensão, recarregue seu cartão em `brave://extensions`, recarregue o jogo e ative novamente pelo ícone. O pacote pronto está em `extension/`.
+
+Para repetir o teste de tiro manual, interrupção, desativação e partidas automáticas a 1×/20×, execute `npm run verify:weapon` com o mesmo requisito de Playwright dos outros testes. Resultado em `reports/weapon-validation.json`.
+
+Na execução registrada com o blaster, chegou à cabine a 1× com **5 vidas, 71 disparos e 39 acertos**. A 20× chegou com 4 vidas. São resultados de partidas com o mod de arma ativo.
+
 ## Permissões e limites
 
 A extensão pede `activeTab` e `scripting`, e só injeta código quando você clica no ícone na origem exata `https://cadeflavio.run`. Não usa servidores de IA, não envia registros e não lê outras abas. Você pode remover a extensão em `brave://extensions`.
@@ -99,6 +118,8 @@ O teste abre um Brave temporário, separado do seu perfil, acessa o jogo real e 
 - `src/controller.js`: leitura, teclas, painel e interrupção.
 - `src/overlay.js`: caixas, câmera, rastro e indicação visual da ação.
 - `src/speed.js`: ajuste opcional e restauração da velocidade do personagem.
+- `src/weapon.js`: projéteis, mira e colisões com os alvos reais.
+- `src/weapon-view.js`: arma, tiros e efeitos de impacto sobre o jogo.
 - `extension/`: extensão pronta para carregar.
 - `scripts/build.mjs`: empacotamento sem dependências.
 - `scripts/verify.mjs`: validação no navegador real.

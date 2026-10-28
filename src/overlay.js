@@ -1,5 +1,5 @@
-const OV_COLORS={player:'#65f5c4',prf:'#69bbff',red:'#ff819c',car:'#ffc067',ghost:'#d69cff',gate:'#ffe880'};
-const OV_NAMES={player:'PILOTO',prf:'PRF',red:'MANIFESTANTE',car:'VIATURA',ghost:'FANTASMA',gate:'CANCELA'};
+const OV_COLORS={player:'#65f5c4',prf:'#69bbff',red:'#ff819c',car:'#ffc067',ghost:'#d69cff',constitution:'#e8df9b',gate:'#ffe880'};
+const OV_NAMES={player:'PILOTO',prf:'PRF',red:'MANIFESTANTE',car:'VIATURA',ghost:'FANTASMA',constitution:'CONSTITUIÇÃO',gate:'CANCELA'};
 
 // A câmera não faz parte do gancho de debug. Esta é a mesma transformação do renderizador do jogo.
 export function makeOverlayScene(s,action={}) {
@@ -20,7 +20,7 @@ export function makeOverlayScene(s,action={}) {
   }
   s.enemies.forEach((e,i)=>box(e,e.type==='prf'?'prf':'red',i));
   s.cars.forEach((e,i)=>box(e,'car',i));
-  s.ghosts.forEach((e,i)=>box(e,'ghost',i));
+  s.ghosts.forEach((e,i)=>box(e,e.spectralKind==='constitution'?'constitution':'ghost',i));
   box(p,'player',0);
   const gx=s.gate.x-cameraX;
   if(gx>-30&&gx<990){
@@ -90,7 +90,7 @@ function ovRender(ctx,scene,status,trail){
   ctx.fillText(`${scene.objects.filter(o=>o.kind!=='player').length} obstáculos na tela  ·  previsão de movimento`,32,104);
   ctx.fillStyle='rgba(6,15,25,.82)';ctx.fillRect(22,475,448,35);
   let lx=32;
-  for(const [kind,label]of [['player','PILOTO'],['prf','PRF'],['red','MANIFESTANTE'],['car','VIATURA'],['ghost','FANTASMA']]){
+  for(const [kind,label]of [['player','PILOTO'],['prf','PRF'],['red','MANIFESTANTE'],['car','VIATURA'],['ghost','FANTASMA'],['constitution','LIVRO']]){
     ctx.fillStyle=OV_COLORS[kind];ctx.fillRect(lx,484,4,4);ctx.fillStyle='#d4e3ef';
     ctx.font='7.5px ui-monospace, Menlo, monospace';ctx.fillText(label,lx+8,488);lx+=ctx.measureText(label).width+23;
   }

@@ -1,6 +1,8 @@
 import { decide, validate } from './planner.js';
 import { installOverlay } from './overlay.js';
 import { createSpeedControl } from './speed.js';
+import { createWeaponSystem } from './weapon.js';
+import { installWeaponLayer } from './weapon-view.js';
 
 export function readSnapshot(win) {
   const g=win.__game;
@@ -11,11 +13,12 @@ export function readSnapshot(win) {
     gate:fields(g.gate,['x','arm','timer','openDur','closedDur']),
     enemies:g.enemies.map(e=>fields(e,['type','x','y','r','baseY','minX','maxX','dir','speed','chaseRange'])),
     cars:g.cars.map(e=>fields(e,['x','y','minX','maxX','dir','speed'])),
-    ghosts:g.ghosts.map(e=>fields(e,['x','y','vx','vy','r','age','alpha']))};
+    ghosts:[...g.ghosts.map(e=>fields(e,['x','y','vx','vy','r','age','alpha'])),
+      ...(g.consts||[]).map(e=>({...fields(e,['x','y','vx','vy','r','age','alpha']),spectralKind:'constitution'}))]};
   validate(s);return s;
 }
 
-export function createController({read,send,every,cancel,now=()=>performance.now()}) {
+export function createController({read,send,every,cancel,now=()=>performance.now(),onStop=()=>{}}) {
   let timer=null,held=new Set(),started=0;
   const logs=[],status={running:false,message:'Pronto',result:null,decisions:0,progress:0,lives:null,decisionMs:0,action:{dx:0,dy:0}};
   function record(entry){logs.push({at:now(),...entry});if(logs.length>6000)logs.shift();}
@@ -29,7 +32,7 @@ export function createController({read,send,every,cancel,now=()=>performance.now
   }
   function stop(message='Parado pelo usuário'){
     status.running=false;if(timer!==null){cancel(timer);timer=null;}
-    apply({dx:0,dy:0});status.action={dx:0,dy:0};status.message=message;record({type:'stop',message,result:status.result});
+    apply({dx:0,dy:0});status.action={dx:0,dy:0};status.message=message;record({type:'stop',message,result:status.result});onStop();
   }
   function tick(){
     if(!status.running)return;
@@ -62,9 +65,11 @@ export function installBot(win,doc) {
   if(win.location.origin!=='https://cadeflavio.run')throw new Error('Este bot só funciona em https://cadeflavio.run.');
   readSnapshot(win);
   const speedControl=createSpeedControl(()=>win.__game?.player);
+  const weapon=createWeaponSystem(()=>win.__game);
   const controller=createController({read:()=>readSnapshot(win),
     send:(type,key)=>win.dispatchEvent(new win.KeyboardEvent(type,{key,code:key,bubbles:true,cancelable:true})),
-    every:(fn,ms)=>win.setInterval(fn,ms),cancel:id=>win.clearInterval(id),now:()=>win.performance.now()});
+    every:(fn,ms)=>win.setInterval(fn,ms),cancel:id=>win.clearInterval(id),now:()=>win.performance.now(),onStop:()=>weapon.ceaseFire()});
+  controller.weapon=weapon;
   const host=doc.createElement('div');host.id='flavio-bot-panel';
   const root=host.attachShadow({mode:'open'});
   root.innerHTML=`<style>
@@ -78,6 +83,8 @@ export function installBot(win,doc) {
     .speed-row{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:5px;margin:6px 0 2px}.speed-row button{background:#263b4d;color:#d9e9f5;font-size:12px;padding:6px 4px;margin:0}
     .speed-row button[data-speed="20"]{background:#502839;color:#ffd6e5}
     #speed-summary{color:#8ee8c7;font-size:11px;margin:5px 0 8px}
+    #weapon-summary{color:#8deaff;font-size:11px;margin:5px 0}.weapon-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+    .weapon-row button{font-size:11px;background:#183c4b;color:#aaf5ff;padding:6px 8px;margin:0}
     :host(.recording){width:250px} :host(.recording) section{padding:12px;background:#0a1420de}
     :host(.recording) .controls,:host(.recording) .help,:host(.recording) .subtitle{display:none}
     :host(.recording) h2{font-size:14px;margin-bottom:4px}:host(.recording) #status{min-height:0}
@@ -85,18 +92,21 @@ export function installBot(win,doc) {
   </style><section><h2>Flávio · piloto local</h2><small class="subtitle">Estado real → previsão → teclas</small>
     <p id="status" role="status">Pronto para jogar</p><p id="stats">—</p>
     <p id="speed-summary">Velocidade original · 1×</p>
+    <p id="weapon-summary">Blaster equipado · J para atirar</p>
     <div class="controls">
     <small>Velocidade do personagem</small><div class="speed-row">
     <button data-speed="1" aria-pressed="true">1× original</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button><button data-speed="20" aria-pressed="false" title="20× experimental">20×</button></div>
+    <div class="weapon-row"><button id="weapon-toggle" aria-pressed="true">Arma: ligada</button><button id="weapon-auto" aria-pressed="true">Auto: ligado</button><button id="weapon-fire">Atirar · J</button></div>
     <button id="start">Iniciar tentativa</button><button class="stop" id="stop">Parar</button>
     <button class="export" id="export">Baixar registros</button>
     <button class="visual" id="visual" aria-pressed="true">Caixas: ligadas · V</button></div>
     <button class="visual" id="record" aria-pressed="false">Modo gravação · G</button>
-    <small class="help">F8 ou Escape para parar. V: caixas. G: recolher controles. Objetivo: entrar na cabine.</small></section>`;
+    <small class="help">J: atirar. F8/Escape: parar. V: caixas. G: recolher controles.</small></section>`;
   doc.documentElement.appendChild(host);
   const overlay=installOverlay(win,doc,{read:()=>readSnapshot(win),getStatus:()=>controller.status});
   controller.visuals=overlay;
   controller.speedControl=speedControl;
+  installWeaponLayer(win,doc,{weapon,getStatus:()=>controller.status,onError:error=>controller.stop('Arma: '+error.message)});
   const toggleVisual=()=>{
     overlay.toggle();root.querySelector('#visual').setAttribute('aria-pressed',String(overlay.settings.enabled));
     root.querySelector('#visual').textContent=`Caixas: ${overlay.settings.enabled?'ligadas':'desligadas'} · V`;
@@ -112,7 +122,15 @@ export function installBot(win,doc) {
     root.querySelector('#stats').textContent=`${controller.status.progress.toFixed(1)}% · ${controller.status.lives??'—'} vidas · ${controller.status.decisionMs.toFixed(1)} ms/decisão`;
     root.querySelector('#speed-summary').textContent=speedControl.multiplier===1?'Velocidade original · 1×':`Velocidade modificada · ${speedControl.multiplier}×`;
     for(const button of root.querySelectorAll('[data-speed]'))button.setAttribute('aria-pressed',String(Number(button.dataset.speed)===speedControl.multiplier));
+    root.querySelector('#weapon-summary').textContent=weapon.state.settings.enabled?`BLASTER · ${weapon.state.shots} disparos · ${weapon.state.hits} acertos`:'Arma desligada';
+    root.querySelector('#weapon-toggle').textContent=`Arma: ${weapon.state.settings.enabled?'ligada':'desligada'}`;
+    root.querySelector('#weapon-toggle').setAttribute('aria-pressed',String(weapon.state.settings.enabled));
+    root.querySelector('#weapon-auto').textContent=`Auto: ${weapon.state.settings.auto?'ligado':'desligado'}`;
+    root.querySelector('#weapon-auto').setAttribute('aria-pressed',String(weapon.state.settings.auto));
   };
+  root.querySelector('#weapon-toggle').addEventListener('click',()=>{weapon.setEnabled(!weapon.state.settings.enabled);update();});
+  root.querySelector('#weapon-auto').addEventListener('click',()=>{weapon.state.settings.auto=!weapon.state.settings.auto;update();});
+  root.querySelector('#weapon-fire').addEventListener('click',()=>{weapon.fire();update();});
   for(const button of root.querySelectorAll('[data-speed]'))button.addEventListener('click',()=>{
     try{speedControl.setMultiplier(Number(button.dataset.speed));update();}
     catch(error){controller.stop(error.message);update();}
@@ -127,7 +145,8 @@ export function installBot(win,doc) {
   });
   root.querySelector('#stop').addEventListener('click',()=>{controller.stop();update();});
   root.querySelector('#export').addEventListener('click',()=>{
-    const text=JSON.stringify({version:'0.4.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier},status:controller.status,logs:controller.logs},null,2);
+    const text=JSON.stringify({version:'0.5.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier,
+      weaponEnabled:weapon.state.settings.enabled,autoFire:weapon.state.settings.auto},weapon:{shots:weapon.state.shots,hits:weapon.state.hits,hitKinds:weapon.state.hitKinds,events:weapon.state.events},status:controller.status,logs:controller.logs},null,2);
     const url=win.URL.createObjectURL(new win.Blob([text],{type:'application/json'}));
     const link=doc.createElement('a');link.href=url;link.download='flavio-bot-partida.json';link.click();
     win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);
@@ -135,6 +154,10 @@ export function installBot(win,doc) {
   const movementKeys=new Set(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d']);
   const emergency=e=>{
     if(e.key==='Escape'||e.key==='F8'){controller.stop('Interrompido por '+e.key);update();}
+    else if(e.key.toLowerCase()==='j'){
+      if(e.type==='keyup'||!e.repeat)weapon.setTrigger(e.type==='keydown');
+      e.preventDefault();
+    }
     else if(e.type==='keydown'&&!e.repeat&&e.key.toLowerCase()==='v')toggleVisual();
     else if(e.type==='keydown'&&!e.repeat&&e.key.toLowerCase()==='g')toggleRecording();
     else if(controller.status.running&&e.isTrusted&&movementKeys.has(e.key.toLowerCase())){

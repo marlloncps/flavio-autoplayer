@@ -30,3 +30,9 @@ Pedido posterior do usuário: manipular e aumentar a velocidade do personagem. I
 ### Ampliação solicitada — versão 0.4
 
 O usuário pediu explicitamente 20×. O limite do ajuste passa a 20 e o painel inclui esse botão adicional, preservando padrão 1×, restauração e identificação de velocidade modificada. Nenhuma outra escrita no motor foi autorizada.
+
+## Emenda autorizada — arma e disparos, versão 0.5
+
+Pedido posterior explícito: fazer engenharia reversa, dar uma arma ao Flávio e colocá-lo para atirar. Isso substitui a restrição original sobre inimigos exclusivamente para impactos do mod: um projétil pode remover o primeiro alvo atingido dos arrays vivos de inimigos, viaturas, fantasmas ou Constituição. Não altera posição, vidas, cancela ou condições de vitória.
+
+Blaster desenhado em uma camada independente das caixas; tiro automático enquanto o bot está em execução, J manual e controles para desativar arma/automático. Paradas cancelam o gatilho e os projéteis. Reiniciar/recarregar a partida restaura os alvos pelo motor original. A validação deve observar impactos reais e a conclusão por movimento normal no jogo, identificando que a partida usa o mod.

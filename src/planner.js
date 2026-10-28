@@ -82,12 +82,13 @@ function step(s,a,dt) {
   for(const ghost of s.ghosts) {
     ghost.age+=dt;
     const dx=p.x-ghost.x,dy=p.y-ghost.y,d=Math.hypot(dx,dy)||1;
-    const turn=Math.min(1,2.6*dt);
-    ghost.vx+=(dx/d*210-ghost.vx)*turn;
-    ghost.vy+=(dy/d*210-ghost.vy)*turn;
-    ghost.x+=ghost.vx*dt;ghost.y=clamp(ghost.y+ghost.vy*dt,120,440);
-    if(ghost.age/1.2>0.6&&d<p.r+ghost.r) hit(s);
-    if(ghost.age/1.2>0.4) clearanceRisk(s,d-p.r-ghost.r,dt);
+    const book=ghost.spectralKind==='constitution',turn=Math.min(1,(book?3.2:2.6)*dt),speed=book?205:210;
+    ghost.vx+=(dx/d*speed-ghost.vx)*turn;
+    ghost.vy+=(dy/d*speed-ghost.vy)*turn;
+    ghost.x+=ghost.vx*dt;ghost.y=clamp(ghost.y+ghost.vy*dt,book?179:120,book?406:440);
+    const fade=book?1:1.2;
+    if(ghost.age/fade>0.6&&d<p.r+ghost.r) hit(s);
+    if(ghost.age/fade>0.4) clearanceRisk(s,d-p.r-ghost.r,dt);
   }
 }
 

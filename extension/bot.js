@@ -1,4 +1,4 @@
-/* Flávio Autoplayer 0.4.0 — local, sem serviços externos */
+/* Flávio Autoplayer 0.5.0 — local, sem serviços externos */
 (()=>{
 'use strict';
 // A previsão segue as regras observadas no script público do jogo em 2026-10-28.
@@ -85,12 +85,13 @@ function step(s,a,dt) {
   for(const ghost of s.ghosts) {
     ghost.age+=dt;
     const dx=p.x-ghost.x,dy=p.y-ghost.y,d=Math.hypot(dx,dy)||1;
-    const turn=Math.min(1,2.6*dt);
-    ghost.vx+=(dx/d*210-ghost.vx)*turn;
-    ghost.vy+=(dy/d*210-ghost.vy)*turn;
-    ghost.x+=ghost.vx*dt;ghost.y=clamp(ghost.y+ghost.vy*dt,120,440);
-    if(ghost.age/1.2>0.6&&d<p.r+ghost.r) hit(s);
-    if(ghost.age/1.2>0.4) clearanceRisk(s,d-p.r-ghost.r,dt);
+    const book=ghost.spectralKind==='constitution',turn=Math.min(1,(book?3.2:2.6)*dt),speed=book?205:210;
+    ghost.vx+=(dx/d*speed-ghost.vx)*turn;
+    ghost.vy+=(dy/d*speed-ghost.vy)*turn;
+    ghost.x+=ghost.vx*dt;ghost.y=clamp(ghost.y+ghost.vy*dt,book?179:120,book?406:440);
+    const fade=book?1:1.2;
+    if(ghost.age/fade>0.6&&d<p.r+ghost.r) hit(s);
+    if(ghost.age/fade>0.4) clearanceRisk(s,d-p.r-ghost.r,dt);
   }
 }
 
@@ -132,8 +133,8 @@ function decide(snapshot) {
   return {...best.first,score:best.score,reason:best.first.dx<1?'Reposicionar / aguardar passagem':best.first.dy?'Desviar e avançar':'Avançar'};
 }
 
-const OV_COLORS={player:'#65f5c4',prf:'#69bbff',red:'#ff819c',car:'#ffc067',ghost:'#d69cff',gate:'#ffe880'};
-const OV_NAMES={player:'PILOTO',prf:'PRF',red:'MANIFESTANTE',car:'VIATURA',ghost:'FANTASMA',gate:'CANCELA'};
+const OV_COLORS={player:'#65f5c4',prf:'#69bbff',red:'#ff819c',car:'#ffc067',ghost:'#d69cff',constitution:'#e8df9b',gate:'#ffe880'};
+const OV_NAMES={player:'PILOTO',prf:'PRF',red:'MANIFESTANTE',car:'VIATURA',ghost:'FANTASMA',constitution:'CONSTITUIÇÃO',gate:'CANCELA'};
 
 // A câmera não faz parte do gancho de debug. Esta é a mesma transformação do renderizador do jogo.
 function makeOverlayScene(s,action={}) {
@@ -154,7 +155,7 @@ function makeOverlayScene(s,action={}) {
   }
   s.enemies.forEach((e,i)=>box(e,e.type==='prf'?'prf':'red',i));
   s.cars.forEach((e,i)=>box(e,'car',i));
-  s.ghosts.forEach((e,i)=>box(e,'ghost',i));
+  s.ghosts.forEach((e,i)=>box(e,e.spectralKind==='constitution'?'constitution':'ghost',i));
   box(p,'player',0);
   const gx=s.gate.x-cameraX;
   if(gx>-30&&gx<990){
@@ -224,7 +225,7 @@ function ovRender(ctx,scene,status,trail){
   ctx.fillText(`${scene.objects.filter(o=>o.kind!=='player').length} obstáculos na tela  ·  previsão de movimento`,32,104);
   ctx.fillStyle='rgba(6,15,25,.82)';ctx.fillRect(22,475,448,35);
   let lx=32;
-  for(const [kind,label]of [['player','PILOTO'],['prf','PRF'],['red','MANIFESTANTE'],['car','VIATURA'],['ghost','FANTASMA']]){
+  for(const [kind,label]of [['player','PILOTO'],['prf','PRF'],['red','MANIFESTANTE'],['car','VIATURA'],['ghost','FANTASMA'],['constitution','LIVRO']]){
     ctx.fillStyle=OV_COLORS[kind];ctx.fillRect(lx,484,4,4);ctx.fillStyle='#d4e3ef';
     ctx.font='7.5px ui-monospace, Menlo, monospace';ctx.fillText(label,lx+8,488);lx+=ctx.measureText(label).width+23;
   }
@@ -279,6 +280,163 @@ function createSpeedControl(getPlayer) {
   return {baseSpeed,get multiplier(){return multiplier;},setMultiplier,reset:()=>setMultiplier(1)};
 }
 
+// Mod local: projéteis próprios; o impacto remove apenas o alvo atingido do array vivo do jogo.
+function wpnCircleTime(a,b,c,r){
+  const dx=b.x-a.x,dy=b.y-a.y,fx=a.x-c.x,fy=a.y-c.y;
+  const cc=fx*fx+fy*fy-r*r;if(cc<=0)return 0;
+  const aa=dx*dx+dy*dy;if(!aa)return null;
+  const bb=2*(fx*dx+fy*dy),disc=bb*bb-4*aa*cc;if(disc<0)return null;
+  const t=(-bb-Math.sqrt(disc))/(2*aa);return t>=0&&t<=1?t:null;
+}
+function wpnRectTime(a,b,c){
+  let enter=0,exit=1;
+  for(const [p,d,min,max]of [[a.x,b.x-a.x,c.x-40,c.x+40],[a.y,b.y-a.y,c.y-15,c.y+17]]){
+    if(Math.abs(d)<1e-9){if(p<min||p>max)return null;continue;}
+    let t1=(min-p)/d,t2=(max-p)/d;if(t1>t2)[t1,t2]=[t2,t1];
+    enter=Math.max(enter,t1);exit=Math.min(exit,t2);if(enter>exit)return null;
+  }
+  return enter>=0&&enter<=1?enter:null;
+}
+function wpnCandidates(g){
+  return [['enemies','person'],['cars','car'],['ghosts','ghost'],['consts','constitution']].flatMap(([name,kind])=>
+    (g[name]||[]).filter(e=>Number.isFinite(e.x)&&Number.isFinite(e.y)&&(e.alpha===undefined||e.alpha>.2))
+      .map(entity=>({entity,array:g[name],kind:kind==='person'?entity.type:kind})));
+}
+function wpnTarget(g){
+  const p=g.player,cam=Math.max(0,Math.min(5665,p.x-420));
+  return wpnCandidates(g).filter(t=>t.entity.x>=cam&&t.entity.x<=cam+960)
+    .map(t=>({...t,distance:Math.hypot(t.entity.x-p.x,t.entity.y-p.y)}))
+    .filter(t=>t.distance<500).sort((a,b)=>a.distance-b.distance)[0]||null;
+}
+function wpnLead(g,target,origin,bulletSpeed){
+  const e=target.entity;let vx=e.vx??(e.dir||0)*(e.speed||0),vy=e.vy||0;
+  if(e.type==='red'&&e.chasing){
+    const dx=g.player.x-e.x,dy=g.player.y-e.y,d=Math.hypot(dx,dy)||1,sp=Math.min((e.speed||0)+30,g.player.speed*.6);
+    vx=dx/d*sp;vy=dy/d*sp;
+  }else if(e.type==='prf'&&Math.abs(e.x-g.player.x)<140&&Math.abs(e.y-g.player.y)<115){vy=Math.sign(g.player.y-e.y)*(e.speed||0)*.5;}
+  const time=Math.min(.45,Math.hypot(e.x-origin.x,e.y-origin.y)/bulletSpeed);
+  return {x:e.x+vx*time,y:e.y+vy*time};
+}
+
+function createWeaponSystem(getGame){
+  const state={settings:{enabled:true,auto:true},bullets:[],effects:[],shots:0,hits:0,hitKinds:{},
+    aim:{angle:0,target:null},flash:0,cooldown:0,trigger:false,time:0,events:[]};
+  let enemiesRef=getGame()?.enemies;
+  function event(data){state.events.push({at:state.time,...data});if(state.events.length>250)state.events.shift();}
+  function ceaseFire(){state.trigger=false;state.bullets=[];state.flash=0;}
+  function syncRound(g){
+    if(g.enemies!==enemiesRef){
+      enemiesRef=g.enemies;ceaseFire();state.effects=[];state.shots=0;state.hits=0;state.hitKinds={};state.events=[];state.cooldown=0;state.aim={angle:0,target:null};
+    }
+  }
+  function setEnabled(on){state.settings.enabled=Boolean(on);if(!on)ceaseFire();}
+  function fire(){
+    const g=getGame();if(!g||g.state!=='playing'||!state.settings.enabled)return false;
+    syncRound(g);if(state.cooldown>0)return false;
+    const origin={x:g.player.x+10,y:g.player.y-5},speed=Math.max(1400,g.player.speed*1.5),target=wpnTarget(g);
+    const aim=target?wpnLead(g,target,origin,speed):{x:origin.x+500,y:origin.y};
+    const angle=Math.atan2(aim.y-origin.y,aim.x-origin.x);
+    state.aim={angle,target:target?{...aim,kind:target.kind}:null};
+    state.bullets.push({x:origin.x+Math.cos(angle)*17,y:origin.y+Math.sin(angle)*17,
+      vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,remaining:650});
+    state.cooldown=.18;state.flash=.065;state.shots++;event({type:'shot',x:origin.x,y:origin.y,kind:target?.kind||null});
+    return true;
+  }
+  function update(dt,autoRequested=false){
+    if(!Number.isFinite(dt)||dt<0)return;
+    const g=getGame();if(!g)return;syncRound(g);
+    state.time+=dt;state.cooldown=Math.max(0,state.cooldown-dt);state.flash=Math.max(0,state.flash-dt);
+    for(const effect of state.effects)effect.ttl-=dt;
+    state.effects=state.effects.filter(e=>e.ttl>0);
+    if(g.state!=='playing'||!state.settings.enabled){ceaseFire();return;}
+    if(state.trigger||(autoRequested&&state.settings.auto&&wpnTarget(g)))fire();
+    const alive=[];
+    for(const bullet of state.bullets){
+      const speed=Math.hypot(bullet.vx,bullet.vy),travel=Math.min(bullet.remaining,speed*dt);
+      const end={x:bullet.x+bullet.vx/speed*travel,y:bullet.y+bullet.vy/speed*travel};
+      let first=null;
+      for(const target of wpnCandidates(g)){
+        const t=target.kind==='car'?wpnRectTime(bullet,end,target.entity):wpnCircleTime(bullet,end,target.entity,(target.entity.r||12)+2);
+        if(t!==null&&(!first||t<first.t))first={...target,t};
+      }
+      if(first){
+        const index=first.array.indexOf(first.entity);
+        if(index>=0){
+          first.array.splice(index,1);state.hits++;state.hitKinds[first.kind]=(state.hitKinds[first.kind]||0)+1;
+          state.effects.push({x:first.entity.x,y:first.entity.y,ttl:.4,kind:first.kind});
+          if(state.effects.length>30)state.effects.shift();event({type:'hit',kind:first.kind,x:first.entity.x,y:first.entity.y});
+        }
+      }else{
+        bullet.x=end.x;bullet.y=end.y;bullet.remaining-=travel;
+        if(bullet.remaining>0&&bullet.y>80&&bullet.y<470)alive.push(bullet);
+      }
+    }
+    state.bullets=alive;
+    if(!wpnTarget(g))state.aim.target=null;
+  }
+  return {state,fire,update,ceaseFire,setEnabled,setTrigger:on=>{state.trigger=Boolean(on);}};
+}
+
+function wpnDraw(ctx,g,state){
+  ctx.clearRect(0,0,960,540);if(g.state!=='playing'||!state.settings.enabled)return;
+  const cam=Math.max(0,Math.min(5665,g.player.x-420)),px=g.player.x-cam,py=g.player.y;
+  ctx.save();ctx.translate(px+10,py-5);ctx.rotate(state.aim.angle);
+  const recoil=state.flash>0?2:0;ctx.translate(-recoil,0);
+  ctx.shadowBlur=4;ctx.shadowColor='#54f6ff';
+  ctx.fillStyle='#101b29';ctx.strokeStyle='#aac9da';ctx.lineWidth=.8;
+  ctx.fillRect(-3,-4,23,8);ctx.strokeRect(-3,-4,23,8);
+  ctx.fillStyle='#2c4056';ctx.fillRect(1,3,5,8);ctx.fillStyle='#f3bf8c';ctx.fillRect(-1,2,5,4);
+  ctx.fillStyle='#67f3ff';ctx.fillRect(6,-2,12,2);ctx.fillStyle='#c6edff';ctx.fillRect(18,-3,4,6);
+  if(state.flash>0){
+    ctx.globalAlpha=Math.min(1,state.flash/.04);ctx.shadowBlur=16;ctx.fillStyle='#ebffff';
+    ctx.beginPath();ctx.moveTo(21,-2);ctx.lineTo(34,-5);ctx.lineTo(29,0);ctx.lineTo(34,5);ctx.lineTo(21,2);ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+  for(const b of state.bullets){
+    const angle=Math.atan2(b.vy,b.vx),x=b.x-cam;
+    ctx.save();ctx.shadowBlur=10;ctx.shadowColor='#53f4ff';ctx.strokeStyle='#70f5ff';ctx.lineWidth=2.8;
+    ctx.beginPath();ctx.moveTo(x-Math.cos(angle)*17,b.y-Math.sin(angle)*17);ctx.lineTo(x,b.y);ctx.stroke();
+    ctx.strokeStyle='#ffffff';ctx.lineWidth=.8;ctx.stroke();ctx.restore();
+  }
+  for(const effect of state.effects){
+    const t=1-effect.ttl/.4,x=effect.x-cam;ctx.save();ctx.globalAlpha=Math.max(0,1-t);
+    ctx.strokeStyle='#78f5ff';ctx.lineWidth=1.4;ctx.shadowColor='#78f5ff';ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(x,effect.y,8+t*25,0,Math.PI*2);ctx.stroke();
+    for(let i=0;i<8;i++){
+      const a=i*Math.PI/4;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*(8+t*15),effect.y+Math.sin(a)*(8+t*15));
+      ctx.lineTo(x+Math.cos(a)*(13+t*30),effect.y+Math.sin(a)*(13+t*30));ctx.stroke();
+    }
+    ctx.font='bold 8px ui-monospace,monospace';ctx.fillStyle='#baffff';ctx.textAlign='center';
+    ctx.fillText('ACERTO',x,effect.y-22-t*10);ctx.restore();
+  }
+  const target=state.aim.target;
+  if(target){
+    const x=target.x-cam,y=target.y;ctx.strokeStyle='rgba(108,243,255,.5)';ctx.lineWidth=.8;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(px+10,py-5);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(x,y,8,0,Math.PI*2);ctx.moveTo(x-12,y);ctx.lineTo(x+12,y);ctx.moveTo(x,y-12);ctx.lineTo(x,y+12);ctx.stroke();
+  }
+}
+
+function installWeaponLayer(win,doc,{weapon,getStatus,onError}){
+  const canvas=doc.createElement('canvas');canvas.id='flavio-weapon-canvas';canvas.width=960;canvas.height=540;canvas.setAttribute('aria-hidden','true');
+  Object.assign(canvas.style,{position:'fixed',pointerEvents:'none',zIndex:'2147483644',background:'transparent'});
+  doc.documentElement.appendChild(canvas);const ctx=canvas.getContext('2d');let last=win.performance.now();
+  function frame(now){
+    const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
+    try{
+      const g=win.__game,rect=doc.querySelector('#game')?.getBoundingClientRect();
+      if(doc.hidden||!g||!rect){weapon.ceaseFire();ctx.clearRect(0,0,960,540);}
+      else{
+        Object.assign(canvas.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
+        weapon.update(dt,getStatus().running);wpnDraw(ctx,g,weapon.state);
+        canvas.dataset.shots=String(weapon.state.shots);canvas.dataset.hits=String(weapon.state.hits);
+      }
+    }catch(error){weapon.setEnabled(false);ctx.clearRect(0,0,960,540);onError(error);}
+    win.requestAnimationFrame(frame);
+  }
+  win.requestAnimationFrame(frame);
+}
+
 
 function readSnapshot(win) {
   const g=win.__game;
@@ -289,11 +447,12 @@ function readSnapshot(win) {
     gate:fields(g.gate,['x','arm','timer','openDur','closedDur']),
     enemies:g.enemies.map(e=>fields(e,['type','x','y','r','baseY','minX','maxX','dir','speed','chaseRange'])),
     cars:g.cars.map(e=>fields(e,['x','y','minX','maxX','dir','speed'])),
-    ghosts:g.ghosts.map(e=>fields(e,['x','y','vx','vy','r','age','alpha']))};
+    ghosts:[...g.ghosts.map(e=>fields(e,['x','y','vx','vy','r','age','alpha'])),
+      ...(g.consts||[]).map(e=>({...fields(e,['x','y','vx','vy','r','age','alpha']),spectralKind:'constitution'}))]};
   validate(s);return s;
 }
 
-function createController({read,send,every,cancel,now=()=>performance.now()}) {
+function createController({read,send,every,cancel,now=()=>performance.now(),onStop=()=>{}}) {
   let timer=null,held=new Set(),started=0;
   const logs=[],status={running:false,message:'Pronto',result:null,decisions:0,progress:0,lives:null,decisionMs:0,action:{dx:0,dy:0}};
   function record(entry){logs.push({at:now(),...entry});if(logs.length>6000)logs.shift();}
@@ -307,7 +466,7 @@ function createController({read,send,every,cancel,now=()=>performance.now()}) {
   }
   function stop(message='Parado pelo usuário'){
     status.running=false;if(timer!==null){cancel(timer);timer=null;}
-    apply({dx:0,dy:0});status.action={dx:0,dy:0};status.message=message;record({type:'stop',message,result:status.result});
+    apply({dx:0,dy:0});status.action={dx:0,dy:0};status.message=message;record({type:'stop',message,result:status.result});onStop();
   }
   function tick(){
     if(!status.running)return;
@@ -340,9 +499,11 @@ function installBot(win,doc) {
   if(win.location.origin!=='https://cadeflavio.run')throw new Error('Este bot só funciona em https://cadeflavio.run.');
   readSnapshot(win);
   const speedControl=createSpeedControl(()=>win.__game?.player);
+  const weapon=createWeaponSystem(()=>win.__game);
   const controller=createController({read:()=>readSnapshot(win),
     send:(type,key)=>win.dispatchEvent(new win.KeyboardEvent(type,{key,code:key,bubbles:true,cancelable:true})),
-    every:(fn,ms)=>win.setInterval(fn,ms),cancel:id=>win.clearInterval(id),now:()=>win.performance.now()});
+    every:(fn,ms)=>win.setInterval(fn,ms),cancel:id=>win.clearInterval(id),now:()=>win.performance.now(),onStop:()=>weapon.ceaseFire()});
+  controller.weapon=weapon;
   const host=doc.createElement('div');host.id='flavio-bot-panel';
   const root=host.attachShadow({mode:'open'});
   root.innerHTML=`<style>
@@ -356,6 +517,8 @@ function installBot(win,doc) {
     .speed-row{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:5px;margin:6px 0 2px}.speed-row button{background:#263b4d;color:#d9e9f5;font-size:12px;padding:6px 4px;margin:0}
     .speed-row button[data-speed="20"]{background:#502839;color:#ffd6e5}
     #speed-summary{color:#8ee8c7;font-size:11px;margin:5px 0 8px}
+    #weapon-summary{color:#8deaff;font-size:11px;margin:5px 0}.weapon-row{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+    .weapon-row button{font-size:11px;background:#183c4b;color:#aaf5ff;padding:6px 8px;margin:0}
     :host(.recording){width:250px} :host(.recording) section{padding:12px;background:#0a1420de}
     :host(.recording) .controls,:host(.recording) .help,:host(.recording) .subtitle{display:none}
     :host(.recording) h2{font-size:14px;margin-bottom:4px}:host(.recording) #status{min-height:0}
@@ -363,18 +526,21 @@ function installBot(win,doc) {
   </style><section><h2>Flávio · piloto local</h2><small class="subtitle">Estado real → previsão → teclas</small>
     <p id="status" role="status">Pronto para jogar</p><p id="stats">—</p>
     <p id="speed-summary">Velocidade original · 1×</p>
+    <p id="weapon-summary">Blaster equipado · J para atirar</p>
     <div class="controls">
     <small>Velocidade do personagem</small><div class="speed-row">
     <button data-speed="1" aria-pressed="true">1× original</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button><button data-speed="20" aria-pressed="false" title="20× experimental">20×</button></div>
+    <div class="weapon-row"><button id="weapon-toggle" aria-pressed="true">Arma: ligada</button><button id="weapon-auto" aria-pressed="true">Auto: ligado</button><button id="weapon-fire">Atirar · J</button></div>
     <button id="start">Iniciar tentativa</button><button class="stop" id="stop">Parar</button>
     <button class="export" id="export">Baixar registros</button>
     <button class="visual" id="visual" aria-pressed="true">Caixas: ligadas · V</button></div>
     <button class="visual" id="record" aria-pressed="false">Modo gravação · G</button>
-    <small class="help">F8 ou Escape para parar. V: caixas. G: recolher controles. Objetivo: entrar na cabine.</small></section>`;
+    <small class="help">J: atirar. F8/Escape: parar. V: caixas. G: recolher controles.</small></section>`;
   doc.documentElement.appendChild(host);
   const overlay=installOverlay(win,doc,{read:()=>readSnapshot(win),getStatus:()=>controller.status});
   controller.visuals=overlay;
   controller.speedControl=speedControl;
+  installWeaponLayer(win,doc,{weapon,getStatus:()=>controller.status,onError:error=>controller.stop('Arma: '+error.message)});
   const toggleVisual=()=>{
     overlay.toggle();root.querySelector('#visual').setAttribute('aria-pressed',String(overlay.settings.enabled));
     root.querySelector('#visual').textContent=`Caixas: ${overlay.settings.enabled?'ligadas':'desligadas'} · V`;
@@ -390,7 +556,15 @@ function installBot(win,doc) {
     root.querySelector('#stats').textContent=`${controller.status.progress.toFixed(1)}% · ${controller.status.lives??'—'} vidas · ${controller.status.decisionMs.toFixed(1)} ms/decisão`;
     root.querySelector('#speed-summary').textContent=speedControl.multiplier===1?'Velocidade original · 1×':`Velocidade modificada · ${speedControl.multiplier}×`;
     for(const button of root.querySelectorAll('[data-speed]'))button.setAttribute('aria-pressed',String(Number(button.dataset.speed)===speedControl.multiplier));
+    root.querySelector('#weapon-summary').textContent=weapon.state.settings.enabled?`BLASTER · ${weapon.state.shots} disparos · ${weapon.state.hits} acertos`:'Arma desligada';
+    root.querySelector('#weapon-toggle').textContent=`Arma: ${weapon.state.settings.enabled?'ligada':'desligada'}`;
+    root.querySelector('#weapon-toggle').setAttribute('aria-pressed',String(weapon.state.settings.enabled));
+    root.querySelector('#weapon-auto').textContent=`Auto: ${weapon.state.settings.auto?'ligado':'desligado'}`;
+    root.querySelector('#weapon-auto').setAttribute('aria-pressed',String(weapon.state.settings.auto));
   };
+  root.querySelector('#weapon-toggle').addEventListener('click',()=>{weapon.setEnabled(!weapon.state.settings.enabled);update();});
+  root.querySelector('#weapon-auto').addEventListener('click',()=>{weapon.state.settings.auto=!weapon.state.settings.auto;update();});
+  root.querySelector('#weapon-fire').addEventListener('click',()=>{weapon.fire();update();});
   for(const button of root.querySelectorAll('[data-speed]'))button.addEventListener('click',()=>{
     try{speedControl.setMultiplier(Number(button.dataset.speed));update();}
     catch(error){controller.stop(error.message);update();}
@@ -405,7 +579,8 @@ function installBot(win,doc) {
   });
   root.querySelector('#stop').addEventListener('click',()=>{controller.stop();update();});
   root.querySelector('#export').addEventListener('click',()=>{
-    const text=JSON.stringify({version:'0.4.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier},status:controller.status,logs:controller.logs},null,2);
+    const text=JSON.stringify({version:'0.5.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier,
+      weaponEnabled:weapon.state.settings.enabled,autoFire:weapon.state.settings.auto},weapon:{shots:weapon.state.shots,hits:weapon.state.hits,hitKinds:weapon.state.hitKinds,events:weapon.state.events},status:controller.status,logs:controller.logs},null,2);
     const url=win.URL.createObjectURL(new win.Blob([text],{type:'application/json'}));
     const link=doc.createElement('a');link.href=url;link.download='flavio-bot-partida.json';link.click();
     win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);
@@ -413,6 +588,10 @@ function installBot(win,doc) {
   const movementKeys=new Set(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d']);
   const emergency=e=>{
     if(e.key==='Escape'||e.key==='F8'){controller.stop('Interrompido por '+e.key);update();}
+    else if(e.key.toLowerCase()==='j'){
+      if(e.type==='keyup'||!e.repeat)weapon.setTrigger(e.type==='keydown');
+      e.preventDefault();
+    }
     else if(e.type==='keydown'&&!e.repeat&&e.key.toLowerCase()==='v')toggleVisual();
     else if(e.type==='keydown'&&!e.repeat&&e.key.toLowerCase()==='g')toggleRecording();
     else if(controller.status.running&&e.isTrusted&&movementKeys.has(e.key.toLowerCase())){

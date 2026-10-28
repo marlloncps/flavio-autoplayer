@@ -48,3 +48,7 @@ test('a previsão acompanha fantasmas que se aproximam', () => {
   const s=scene({ghosts:[{x:550,y:292.5,vx:-210,vy:0,r:15,age:2,alpha:1}]});
   assert.equal(forecast(s,{dx:1,dy:0},0.4).hits,1);
 });
+test('o novo livro já pode causar colisão aos 0,61 segundos de aparição',()=>{
+  const s=scene({ghosts:[{x:510,y:292.5,vx:0,vy:0,r:15,age:.61,alpha:.61,spectralKind:'constitution'}]});
+  assert.equal(forecast(s,{dx:0,dy:0},.01).hits,1);
+});
