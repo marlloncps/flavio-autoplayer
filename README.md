@@ -4,7 +4,6 @@ Um bot que atravessa a ponte de **[Cadê o Flávio?](https://cadeflavio.run/)** 
 
 Começou com “será que dá para passar da primeira fase?” e virou um laboratório de **engenharia reversa, automação e mods de jogos no navegador**. Construído por [@marlloncps](https://github.com/marlloncps), com assistência do Codex.
 
-[![Verificações](https://github.com/marlloncps/flavio-autoplayer/actions/workflows/ci.yml/badge.svg)](https://github.com/marlloncps/flavio-autoplayer/actions/workflows/ci.yml)
 [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-75e3b0)](LICENSE)
 
 ![Bot jogando com caixas de obstáculos, mira e blaster](docs/media/demo.gif)
@@ -111,7 +110,7 @@ npm run build
 npm run format:check
 ```
 
-Depois de editar `src/`, gere o bundle, recarregue a extensão e a página. `npm run format` padroniza a formatação dos arquivos do projeto. O GitHub Actions executa testes, checagem de formato e build, verificando se o pacote gerado está atualizado.
+Depois de editar `src/`, gere o bundle, recarregue a extensão e a página. `npm run format` padroniza a formatação dos arquivos do projeto. O [workflow do GitHub Actions](.github/workflows/ci.yml) está configurado para executar testes, checagem de formato e build, verificando se o pacote gerado está atualizado. A execução remota depende da disponibilidade do serviço para a conta; as verificações locais podem ser executadas pelos comandos acima.
 
 ### Verificação com o jogo real
 
