@@ -1,0 +1,13 @@
+{
+  "name": "flavio-autoplayer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Controlador local para a primeira etapa de cadeflavio.run",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "node scripts/build.mjs",
+    "verify": "node scripts/verify.mjs"
+  },
+  "devDependencies": {"playwright": "^1.55.0"}
+}
