@@ -34,3 +34,15 @@
 - Duas partidas com a camada visual e gravação chegaram à cabine com 5 vidas. O teste verificou V, G, ausência de erros da página e alinhamento do canvas de 1280×720.
 - `reports/visual-validation.json` registra a última execução. `visual-preview.png` mostra as caixas durante a partida e `visual-result.png` comprova a entrada na cabine. O MP4 de demonstração é entregue separadamente, sem áudio.
 - Nenhuma alteração no decisor ou nas regras do jogo. A camada é somente visual e não recebe cliques.
+
+## Controle experimental de velocidade — versão 0.3
+
+- Autorização posterior explícita: usuário pediu manipular e aumentar a velocidade do personagem. A restrição anterior de não escrever em velocidade foi substituída somente para esse campo e somente por controles explícitos.
+- `createSpeedControl` captura a velocidade original sem modificá-la. Botões 1×/2×/3× escrevem apenas no `player.speed` atual; não acumulam multiplicações. Padrão 1×, sem persistência entre recargas.
+- Vidas, posição, inimigos, cancela e atalhos de vitória não são modificados. O painel e os registros identificam velocidade modificada, inclusive no modo de gravação.
+- Quatro testes novos verificam padrão, multiplicação sobre a base, restauração, rejeição de valores inválidos e uso do jogador atual. Suíte: 25 testes aprovados.
+- Medição de movimento manual: 147 unidades em 0,6 s do motor a 1× e 294 unidades em 0,6 s a 2×. Velocidades no motor: 245 e 490 unidades/s; razão observada em tempo real: 2,009×.
+- Medição inicial somente por tempo de parede variou e falhou. Foram acrescentados os tempos do motor à instrumentação; o critério do teste agora usa esses tempos porque o jogo limita o incremento por quadro. O tempo real continua registrado separadamente.
+- Partidas reais com a nova opção: 2× chegou à cabine com 5 vidas em 14.749 ms; 3× com 5 vidas em 8.800 ms. Botão original e recarga restauraram 245 unidades/s. Relatório em `reports/speed-validation.json`.
+- Essas partidas aceleradas têm uma regra modificada; os relatórios anteriores de velocidade original continuam preservados.
+- Revisão independente do controle de velocidade: sem achados acionáveis; padrão sem escrita, restauração, não acumulação e identificação no painel confirmados. O revisor executou a suíte de 25 testes com sucesso.

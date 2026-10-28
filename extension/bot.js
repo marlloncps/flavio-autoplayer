@@ -1,4 +1,4 @@
-/* Flávio Autoplayer 0.2.0 — local, sem serviços externos */
+/* Flávio Autoplayer 0.3.0 — local, sem serviços externos */
 (()=>{
 'use strict';
 // A previsão segue as regras observadas no script público do jogo em 2026-10-28.
@@ -264,6 +264,21 @@ function installOverlay(win,doc,{read,getStatus}) {
   return {settings,setEnabled,toggle:()=>setEnabled(!settings.enabled)};
 }
 
+// Experimento solicitado pelo usuário: única escrita permitida no estado do motor.
+function createSpeedControl(getPlayer) {
+  const baseSpeed=getPlayer()?.speed;
+  if(!Number.isFinite(baseSpeed)||baseSpeed<=0)throw new Error('Velocidade original inválida.');
+  let multiplier=1;
+  function setMultiplier(value){
+    if(!Number.isFinite(value)||value<1||value>3)throw new Error('Escolha uma velocidade entre 1 e 3.');
+    const player=getPlayer();
+    if(!player||!Number.isFinite(player.speed)||player.speed<=0)throw new Error('Jogador indisponível para ajustar a velocidade.');
+    player.speed=baseSpeed*value;multiplier=value;
+    return player.speed;
+  }
+  return {baseSpeed,get multiplier(){return multiplier;},setMultiplier,reset:()=>setMultiplier(1)};
+}
+
 
 function readSnapshot(win) {
   const g=win.__game;
@@ -306,7 +321,7 @@ function createController({read,send,every,cancel,now=()=>performance.now()}) {
       const t=now(),a=decide(s);status.decisionMs=now()-t;
       if(!Number.isFinite(a.dx)||!Number.isFinite(a.dy))throw new Error('Ação inválida');
       apply(a);status.action={dx:a.dx,dy:a.dy};status.decisions++;status.message=a.reason;
-      record({type:'decision',x:s.player.x,y:s.player.y,lives:s.player.lives,invuln:s.player.invuln,
+      record({type:'decision',x:s.player.x,y:s.player.y,lives:s.player.lives,invuln:s.player.invuln,speed:s.player.speed,
         gate:s.gate,action:a,decisionMs:status.decisionMs,
         threats:[...s.enemies,...s.cars,...s.ghosts].filter(e=>Math.abs(e.x-s.player.x)<350)});
     }catch(error){status.result='error';stop(error.message);}
@@ -324,6 +339,7 @@ function installBot(win,doc) {
   if(win.__flavioBot)return win.__flavioBot;
   if(win.location.origin!=='https://cadeflavio.run')throw new Error('Este bot só funciona em https://cadeflavio.run.');
   readSnapshot(win);
+  const speedControl=createSpeedControl(()=>win.__game?.player);
   const controller=createController({read:()=>readSnapshot(win),
     send:(type,key)=>win.dispatchEvent(new win.KeyboardEvent(type,{key,code:key,bubbles:true,cancelable:true})),
     every:(fn,ms)=>win.setInterval(fn,ms),cancel:id=>win.clearInterval(id),now:()=>win.performance.now()});
@@ -337,13 +353,18 @@ function installBot(win,doc) {
     button.stop{background:#ffb9a8}button.export{background:#bbd5ef}#status{min-height:38px}#stats{font-variant-numeric:tabular-nums}
     button.visual{background:#253b50;color:#cce5fa;padding:6px 10px;font-size:12px}
     button[aria-pressed="true"]{box-shadow:inset 0 0 0 1px #65f5c4}
+    .speed-row{display:flex;gap:5px;margin:6px 0 2px}.speed-row button{flex:1;background:#263b4d;color:#d9e9f5;font-size:12px;padding:6px 4px;margin:0}
+    #speed-summary{color:#8ee8c7;font-size:11px;margin:5px 0 8px}
     :host(.recording){width:250px} :host(.recording) section{padding:12px;background:#0a1420de}
     :host(.recording) .controls,:host(.recording) .help,:host(.recording) .subtitle{display:none}
     :host(.recording) h2{font-size:14px;margin-bottom:4px}:host(.recording) #status{min-height:0}
     :host(.recording) #record{padding:3px 0;background:none;color:#91adbf;box-shadow:none;font-size:10px;margin:0}
   </style><section><h2>Flávio · piloto local</h2><small class="subtitle">Estado real → previsão → teclas</small>
     <p id="status" role="status">Pronto para jogar</p><p id="stats">—</p>
+    <p id="speed-summary">Velocidade original · 1×</p>
     <div class="controls">
+    <small>Velocidade do personagem</small><div class="speed-row">
+    <button data-speed="1" aria-pressed="true">1× original</button><button data-speed="2" aria-pressed="false">2×</button><button data-speed="3" aria-pressed="false">3×</button></div>
     <button id="start">Iniciar tentativa</button><button class="stop" id="stop">Parar</button>
     <button class="export" id="export">Baixar registros</button>
     <button class="visual" id="visual" aria-pressed="true">Caixas: ligadas · V</button></div>
@@ -352,6 +373,7 @@ function installBot(win,doc) {
   doc.documentElement.appendChild(host);
   const overlay=installOverlay(win,doc,{read:()=>readSnapshot(win),getStatus:()=>controller.status});
   controller.visuals=overlay;
+  controller.speedControl=speedControl;
   const toggleVisual=()=>{
     overlay.toggle();root.querySelector('#visual').setAttribute('aria-pressed',String(overlay.settings.enabled));
     root.querySelector('#visual').textContent=`Caixas: ${overlay.settings.enabled?'ligadas':'desligadas'} · V`;
@@ -365,7 +387,13 @@ function installBot(win,doc) {
   const update=()=>{
     root.querySelector('#status').textContent=controller.status.message;
     root.querySelector('#stats').textContent=`${controller.status.progress.toFixed(1)}% · ${controller.status.lives??'—'} vidas · ${controller.status.decisionMs.toFixed(1)} ms/decisão`;
+    root.querySelector('#speed-summary').textContent=speedControl.multiplier===1?'Velocidade original · 1×':`Velocidade modificada · ${speedControl.multiplier}×`;
+    for(const button of root.querySelectorAll('[data-speed]'))button.setAttribute('aria-pressed',String(Number(button.dataset.speed)===speedControl.multiplier));
   };
+  for(const button of root.querySelectorAll('[data-speed]'))button.addEventListener('click',()=>{
+    try{speedControl.setMultiplier(Number(button.dataset.speed));update();}
+    catch(error){controller.stop(error.message);update();}
+  });
   root.querySelector('#start').addEventListener('click',()=>{
     if(doc.hidden){controller.stop('Mantenha a aba visível');return;}
     const state=win.__game?.state;
@@ -376,7 +404,7 @@ function installBot(win,doc) {
   });
   root.querySelector('#stop').addEventListener('click',()=>{controller.stop();update();});
   root.querySelector('#export').addEventListener('click',()=>{
-    const text=JSON.stringify({version:'0.2.0',date:new Date().toISOString(),status:controller.status,logs:controller.logs},null,2);
+    const text=JSON.stringify({version:'0.3.0',date:new Date().toISOString(),experiment:{baseSpeed:speedControl.baseSpeed,speedMultiplier:speedControl.multiplier},status:controller.status,logs:controller.logs},null,2);
     const url=win.URL.createObjectURL(new win.Blob([text],{type:'application/json'}));
     const link=doc.createElement('a');link.href=url;link.download='flavio-bot-partida.json';link.click();
     win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);

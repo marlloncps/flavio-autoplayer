@@ -2,7 +2,7 @@
 
 Protótipo de um bot que lê o estado real de [cadeflavio.run](https://cadeflavio.run/?debug), prevê colisões e joga usando comandos de teclado.
 
-**Resultado observado:** no teste final registrado em `reports/validation.json`, atravessou a ponte em 26,9 segundos, entrou na cabine com 2 vidas e fez 534 decisões. Três execuções anteriores também chegaram à cabine, com 5, 5 e 4 vidas. O relatório incluído corresponde à versão final, após a correção do controle manual. Isso comprova essas partidas, não uma taxa de vitória em todas as situações.
+**Resultado observado na velocidade original:** no teste registrado em `reports/validation.json`, atravessou a ponte em 26,9 segundos, entrou na cabine com 2 vidas e fez 534 decisões. Três execuções anteriores também chegaram à cabine, com 5, 5 e 4 vidas. Esse relatório corresponde à versão anterior à inclusão dos controles experimentais de velocidade. Isso comprova essas partidas, não uma taxa de vitória em todas as situações.
 
 ## Usar no Brave
 
@@ -26,7 +26,7 @@ Para uma tentativa nova depois de chegar à cabine, recarregue a página e cliqu
 ## O que está fazendo
 
 - Usa o recurso `?debug` que o próprio jogo oferece (`window.__game`). Lê coordenadas e objetos internos, inclusive dados que podem estar fora da tela; não interpreta pixels.
-- Não altera vidas, posição, velocidade, inimigos, cancela ou regras. Não chama o atalho de vitória do jogo.
+- Não altera vidas, posição, inimigos ou cancela, e não chama o atalho de vitória do jogo. A velocidade fica original por padrão; só é modificada ao clicar no controle experimental descrito abaixo.
 - A cada aproximadamente 50 ms, avalia sequências curtas de movimento com uma previsão de cerca de 1,1 segundo.
 - Simula, sobre cópias, patrulhas, perseguição, viaturas, fantasmas, invulnerabilidade e abertura da cancela.
 - Envia apenas as mudanças nas teclas necessárias, inclusive movimento diagonal.
@@ -49,6 +49,20 @@ As caixas acompanham a câmera e o tamanho do jogo. O efeito de tremor do própr
 Para gravar por conta própria, inicie a tentativa e pressione **G**. Use a gravação de tela do macOS (**⌘ Shift 5**) e mantenha o Brave em foco durante a partida. F8 e Escape continuam parando o bot.
 
 Esta versão usa um **controlador preditivo programado**, sem modelo treinado. Implementa a parte de leitura e controle discutida a partir do vídeo; integrar um modelo de decisões como Jev é trabalho futuro. A decisão pode ser trocada em `src/planner.js`, preservando o executor e a interrupção.
+
+## Velocidade experimental — versão 0.3
+
+No painel expandido, use **1× original**, **2×** ou **3×**. Pode ajustar antes de iniciar ou durante a partida, tanto com o bot quanto jogando manualmente.
+
+- **1× original:** restaura a velocidade capturada ao ativar a extensão (245 unidades/s na versão testada do jogo).
+- **2×:** dobra a velocidade do personagem; **3×:** triplica.
+- Recarregar a página restaura o padrão. Tentar novamente sem recarregar mantém a seleção.
+- Parar o bot não restaura automaticamente a velocidade; use **1× original** para isso.
+- O painel mostra **Velocidade modificada** inclusive no modo de gravação. O JSON exportado inclui o multiplicador e a velocidade de cada decisão.
+
+Esse controle modifica explicitamente `player.speed` no jogo local, conforme solicitado. Os resultados com 2×/3× são experimentos com uma regra modificada e devem ser distinguidos das partidas na velocidade original.
+
+No teste registrado em `reports/speed-validation.json`, chegou à cabine com 5 vidas em aproximadamente 14,7 s a 2× e 8,8 s a 3×. Restauração e recarga foram verificadas. `npm run verify:speed` repete esse teste em um navegador isolado.
 
 ## Permissões e limites
 
@@ -81,6 +95,7 @@ O teste abre um Brave temporário, separado do seu perfil, acessa o jogo real e 
 - `src/planner.js`: previsão do mundo e escolha do movimento.
 - `src/controller.js`: leitura, teclas, painel e interrupção.
 - `src/overlay.js`: caixas, câmera, rastro e indicação visual da ação.
+- `src/speed.js`: ajuste opcional e restauração da velocidade do personagem.
 - `extension/`: extensão pronta para carregar.
 - `scripts/build.mjs`: empacotamento sem dependências.
 - `scripts/verify.mjs`: validação no navegador real.

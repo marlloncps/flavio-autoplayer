@@ -22,3 +22,7 @@ Testes de previsão de colisão/cancela, interrupção e recusa de estados invá
 
 ## Evidência do alvo
 HTML público obtido em 2026-10-28. Script inline extraído sem alteração para análise estática. O próprio script expõe player, gate, enemies, cars, ghosts e state em `?debug`. Velocidade do jogador 245 unidades/s; entrada na cabine em x >= 6165; pista y=185..400 com raio 12. Nenhum acesso a dados de outras abas.
+
+## Emenda autorizada — controle de velocidade, versão 0.3
+
+Pedido posterior do usuário: manipular e aumentar a velocidade do personagem. Isso substitui exclusivamente a restrição original de não escrever em `player.speed`: um controle explícito 1×/2×/3× pode alterar esse campo e restaurá-lo ao valor capturado na ativação. O padrão continua 1×; nenhuma alteração é aplicada ao instalar o painel. Vidas, posição, inimigos, cancela e atalhos de vitória permanecem fora das escritas autorizadas. Ajustes ficam identificados no painel e nos registros como velocidade modificada.

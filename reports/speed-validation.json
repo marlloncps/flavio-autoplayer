@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-28T14:05:38.954Z",
+  "measurements": [
+    {
+      "multiplier": 1,
+      "before": {
+        "x": 130,
+        "t": 355.79999999981374,
+        "gameTime": 0,
+        "speed": 245
+      },
+      "after": {
+        "x": 276.99999999999994,
+        "t": 962.0999999996275,
+        "gameTime": 0.6,
+        "speed": 245
+      },
+      "dx": 146.99999999999994,
+      "elapsedMs": 606.2999999998137,
+      "gameSeconds": 0.6,
+      "unitsPerSecond": 242.45423057899572,
+      "unitsPerGameSecond": 244.99999999999991
+    },
+    {
+      "multiplier": 2,
+      "before": {
+        "x": 130,
+        "t": 139.29999999981374,
+        "gameTime": 0,
+        "speed": 490
+      },
+      "after": {
+        "x": 424,
+        "t": 742.7999999998137,
+        "gameTime": 0.6,
+        "speed": 490
+      },
+      "dx": 294,
+      "elapsedMs": 603.5,
+      "gameSeconds": 0.6,
+      "unitsPerSecond": 487.15824357912174,
+      "unitsPerGameSecond": 490
+    }
+  ],
+  "observedSpeedRatio": 2.0092792046389856,
+  "resetVerified": true,
+  "reloadSpeed": 245,
+  "results": [
+    {
+      "multiplier": 2,
+      "state": "cabin",
+      "lives": 5,
+      "speed": 490,
+      "progress": 100,
+      "logSpeed": 490,
+      "durationMs": 14749
+    },
+    {
+      "multiplier": 3,
+      "state": "cabin",
+      "lives": 5,
+      "speed": 735,
+      "progress": 100,
+      "logSpeed": 735,
+      "durationMs": 8800
+    }
+  ]
+}
