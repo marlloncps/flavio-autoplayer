@@ -2,7 +2,7 @@
   "name": "flavio-autoplayer",
   "version": "0.5.0",
   "private": true,
-  "description": "Controlador local para a primeira etapa de cadeflavio.run",
+  "description": "Bot preditivo e mods locais para Cadê o Flávio?: visualização, blaster e controle de velocidade.",
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.js",
@@ -10,7 +10,25 @@
     "verify": "node scripts/verify.mjs",
     "demo": "node scripts/demo.mjs",
     "verify:speed": "node scripts/verify-speed.mjs",
-    "verify:weapon": "node scripts/verify-weapon.mjs"
+    "verify:weapon": "node scripts/verify-weapon.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
-  "devDependencies": {"playwright": "^1.55.0"}
+  "devDependencies": {
+    "playwright": "^1.55.0",
+    "prettier": "3.6.2"
+  },
+  "author": "marlloncps",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marlloncps/flavio-autoplayer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marlloncps/flavio-autoplayer/issues"
+  },
+  "homepage": "https://github.com/marlloncps/flavio-autoplayer#readme",
+  "engines": {
+    "node": ">=20"
+  }
 }

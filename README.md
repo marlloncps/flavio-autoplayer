@@ -1,130 +1,137 @@
-# Flávio — piloto local · blaster · versão 0.5
+# Flávio Autoplayer 🎮
 
-Protótipo de um bot que lê o estado real de [cadeflavio.run](https://cadeflavio.run/?debug), prevê colisões e joga usando comandos de teclado.
+Um bot que atravessa a ponte de **[Cadê o Flávio?](https://cadeflavio.run/)** — com previsão de colisões, caixas sobre os obstáculos e um blaster que realmente remove os alvos atingidos.
 
-**Resultado observado na velocidade original:** no teste registrado em `reports/validation.json`, atravessou a ponte em 26,9 segundos, entrou na cabine com 2 vidas e fez 534 decisões. Três execuções anteriores também chegaram à cabine, com 5, 5 e 4 vidas. Esse relatório corresponde à versão anterior à inclusão dos controles experimentais de velocidade. Isso comprova essas partidas, não uma taxa de vitória em todas as situações.
+Começou com “será que dá para passar da primeira fase?” e virou um laboratório de **engenharia reversa, automação e mods de jogos no navegador**. Construído por [@marlloncps](https://github.com/marlloncps), com assistência do Codex.
 
-## Usar no Brave
+[![Verificações](https://github.com/marlloncps/flavio-autoplayer/actions/workflows/ci.yml/badge.svg)](https://github.com/marlloncps/flavio-autoplayer/actions/workflows/ci.yml)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-75e3b0)](LICENSE)
 
-O pacote já inclui a extensão pronta na pasta `extension`; não precisa instalar Node ou pagar uma API para jogar.
+![Bot jogando com caixas de obstáculos, mira e blaster](docs/media/demo.gif)
 
-1. Abra `brave://extensions` no Brave.
-2. Ative **Modo do desenvolvedor**.
-3. Clique em **Carregar sem compactação** e escolha a pasta **extension** deste projeto.
-4. Abra [o jogo com leitura habilitada](https://cadeflavio.run/?debug).
-5. No menu de extensões do Brave, clique em **Flávio — piloto local**. Aparecerá o painel no canto inferior direito.
-6. Clique em **Iniciar tentativa** e mantenha essa aba e janela em foco.
+**[Jogar o original ↗](https://cadeflavio.run/) · [Baixar a extensão e o vídeo ↓](https://github.com/marlloncps/flavio-autoplayer/releases/latest) · [Guia completo](docs/usage.md)**
 
-**Para parar:** clique em Parar, pressione **F8** ou **Escape**, ou saia da aba/janela. Usar as setas ou WASD também interrompe o bot e devolve o controle a você. O bot solta as teclas que pressionou. O jogo continua rodando depois da parada, portanto o personagem pode ser capturado enquanto fica parado.
+## O que tem aqui
 
-Se abrir o jogo sem `?debug`, o primeiro clique no ícone recarrega a página para habilitar a leitura e mostra `+1`. Clique no ícone mais uma vez depois de carregar. Essa recarga perde a partida em andamento.
+- 🧠 **Piloto automático:** prevê possíveis colisões e escolhe pequenos movimentos pelo teclado.
+- 📦 **Visualização:** caixas por tipo de obstáculo, distâncias, regiões de colisão, rastro e direção escolhida.
+- 🔫 **Blaster local:** mira automática, projéteis, recuo, impactos e contadores de tiros/acertos.
+- ⚡ **Velocidade ajustável:** 1×, 2×, 3× e 20×, com indicação no painel.
+- 🎬 **Modo de gravação:** recolhe os controles e deixa a partida em destaque.
+- 🛑 **Interrupção:** F8, Escape, entrada manual, perda de foco ou troca de aba.
+- 📊 **Registros em JSON:** decisões, velocidade, disparos e impactos para investigar depois.
 
-Ao entrar na cabine, o bot para: isso é a conclusão da travessia. O diálogo posterior tem um final narrativo em que o avião não decola. Não há uma segunda corrida implementada neste bot.
+## Qual é o jogo?
 
-Para uma tentativa nova depois de chegar à cabine, recarregue a página e clique novamente no ícone da extensão. Depois de uma captura, **Iniciar tentativa** usa o botão de tentar novamente do próprio jogo.
+O alvo deste experimento é **[Cadê o Flávio?](https://cadeflavio.run/)**, um jogo de navegador em que o personagem precisa atravessar uma ponte desviando de obstáculos. O bot encerra sua tentativa quando entra na cabine, ao final da travessia. O diálogo narrativo posterior continua pertencendo ao jogo.
 
-## O que está fazendo
+Este é um **projeto independente**. O jogo, seus personagens e recursos visuais pertencem aos respectivos criadores. Este repositório distribui o bot e os mods; o jogo continua rodando no site original. As imagens e o vídeo demonstram a execução do experimento sobre esse jogo.
 
-- Usa o recurso `?debug` que o próprio jogo oferece (`window.__game`). Lê coordenadas e objetos internos, inclusive dados que podem estar fora da tela; não interpreta pixels.
-- Não altera vidas, posição ou cancela, e não chama o atalho de vitória do jogo. A velocidade fica original por padrão; só é modificada pelo controle experimental. O mod de arma remove os alvos atingidos pelos seus projéteis, conforme solicitado.
-- A cada aproximadamente 50 ms, avalia sequências curtas de movimento com uma previsão de cerca de 1,1 segundo.
-- Simula, sobre cópias, patrulhas, perseguição, viaturas, fantasmas, invulnerabilidade e abertura da cancela.
-- Envia apenas as mudanças nas teclas necessárias, inclusive movimento diagonal.
-- Permite baixar os registros da tentativa em JSON. Mantém no máximo 6.000 registros em memória.
+## Rodar em poucos passos
 
-## Caixas e modo de gravação — versão 0.2
+Não precisa de Node.js nem de uma chave de IA para usar a extensão.
 
-As caixas aparecem automaticamente durante a travessia. Cada tipo tem uma cor: verde para o personagem, azul para PRF, rosa para manifestantes, laranja para viaturas e roxo para fantasmas. Vermelho destaca proximidade. As etiquetas mostram o tipo e a distância em unidades do jogo.
+1. Baixe o ZIP da extensão na [última versão](https://github.com/marlloncps/flavio-autoplayer/releases/latest) e extraia. Se baixou o repositório inteiro, use a pasta `extension/`.
+2. Abra `brave://extensions` e ative **Modo do desenvolvedor**.
+3. Clique em **Carregar sem compactação** e selecione a pasta que contém `manifest.json`.
+4. Abra **[o jogo com debug habilitado](https://cadeflavio.run/?debug)**.
+5. Clique no ícone da extensão **Flávio — piloto local** e depois em **Iniciar tentativa**.
+6. Mantenha a aba e a janela em foco para acompanhar a partida.
 
-- **V** ou **Caixas: ligadas**: mostrar/esconder a camada visual.
-- **G** ou **Modo gravação**: recolher os controles para deixar o jogo em destaque. Pressione G novamente para expandir.
-- **Seta verde**: direção do comando atual, projetada por um curto intervalo. Não representa toda a sequência futura calculada pelo decisor.
-- **Rastro tracejado**: caminho que o personagem realmente percorreu.
-- **Contornos tracejados pequenos**: regiões de colisão do motor; as caixas maiores aproximam o tamanho visual dos desenhos.
+Se o primeiro clique no ícone mostrar `+1`, aguarde a recarga e clique novamente. Para atualizar uma instalação existente, recarregue o cartão da extensão e a página do jogo. Se mudou a pasta da extensão, carregue-a pelo novo local.
 
-As caixas acompanham a câmera e o tamanho do jogo. O efeito de tremor do próprio jogo pode causar um pequeno deslocamento visual temporário. Não são detecções de visão computacional: usam os dados internos disponíveis no modo debug, como o restante do bot.
+### Controles
 
-**Se você já carregou a versão anterior:** em `brave://extensions`, clique em **Recarregar** no cartão da extensão. Depois recarregue a página do jogo e clique no ícone da extensão novamente. Não precisa selecionar a pasta de novo.
+| Controle                | Ação                                                      |
+| ----------------------- | --------------------------------------------------------- |
+| **Iniciar tentativa**   | O bot passa a mover o personagem e atirar automaticamente |
+| **J**                   | Segure para atirar manualmente, com mira automática       |
+| **Arma / Auto**         | Ativa ou desativa a arma e o disparo automático           |
+| **1× / 2× / 3× / 20×**  | Ajusta a velocidade do personagem                         |
+| **V**                   | Mostra ou esconde as caixas; o blaster continua visível   |
+| **G**                   | Recolhe ou expande os controles para gravar               |
+| **F8 / Escape / Parar** | Interrompe o bot e cancela os projéteis em voo            |
+| **Setas / WASD**        | Interrompe o bot e devolve o movimento a você             |
 
-Para gravar por conta própria, inicie a tentativa e pressione **G**. Use a gravação de tela do macOS (**⌘ Shift 5**) e mantenha o Brave em foco durante a partida. F8 e Escape continuam parando o bot.
+Parar o bot mantém a velocidade selecionada. Use **1× original** para restaurá-la. Desligar a arma não restaura alvos já atingidos; reinicie/recarregue a partida para isso. O jogo continua rodando depois da interrupção.
 
-Esta versão usa um **controlador preditivo programado**, sem modelo treinado. Implementa a parte de leitura e controle discutida a partir do vídeo; integrar um modelo de decisões como Jev é trabalho futuro. A decisão pode ser trocada em `src/planner.js`, preservando o executor e a interrupção.
+## Como funciona
 
-## Velocidade experimental — versão 0.4
+```text
+Estado do jogo → cópia dos dados → previsão de movimentos → decisão → teclas
+       │
+       ├─→ caixas, distâncias e rastro
+       └─→ mira → projétil → colisão → remoção do alvo atingido
+```
 
-No painel expandido, use **1× original**, **2×**, **3×** ou **20×**. Pode ajustar antes de iniciar ou durante a partida, tanto com o bot quanto jogando manualmente.
+O jogo oferece `window.__game` quando aberto com `?debug`. O bot lê essa interface para observar o mundo, inclusive objetos fora da tela. A cada aproximadamente 50 ms, o controlador avalia sequências curtas de movimentos e escolhe a próxima ação.
 
-- **1× original:** restaura a velocidade capturada ao ativar a extensão (245 unidades/s na versão testada do jogo).
-- **2×:** dobra a velocidade do personagem; **3×:** triplica.
-- **20×:** opção extrema, 4.900 unidades/s na versão testada. O painel mantém a indicação de velocidade modificada.
-- Recarregar a página restaura o padrão. Tentar novamente sem recarregar mantém a seleção.
-- Parar o bot não restaura automaticamente a velocidade; use **1× original** para isso.
-- O painel mostra **Velocidade modificada** inclusive no modo de gravação. O JSON exportado inclui o multiplicador e a velocidade de cada decisão.
+**É um controlador preditivo programado.** Esta versão não usa machine learning, Jev ou visão computacional. As caixas vêm dos dados internos; não são detecções por imagem. A previsão trabalha sobre cópias, e o movimento usa eventos de teclado.
 
-Esse controle modifica explicitamente `player.speed` no jogo local, conforme solicitado. Os resultados com 2×/3×/20× são experimentos com uma regra modificada e devem ser distinguidos das partidas na velocidade original.
+Os mods pedidos depois têm efeitos explícitos no jogo local: o controle de velocidade altera `player.speed`, e os impactos do blaster removem somente o primeiro alvo atingido de um dos arrays vivos de inimigos, viaturas, fantasmas ou Constituição. O bot não escreve em vidas, posição ou cancela e não chama o atalho de vitória do jogo.
 
-No teste registrado em `reports/speed-validation.json`, chegou à cabine com 5 vidas em aproximadamente 14,7 s a 2× e 8,8 s a 3×. Restauração e recarga foram verificadas. `npm run verify:speed` repete esse teste em um navegador isolado.
+## Resultado registrado
 
-O teste separado de **20×** chegou à cabine em aproximadamente **1,5 s**, com 4 vidas, e confirmou a restauração para 1×. Resultado em `reports/speed20-validation.json`.
+| Execução                      | Resultado                                                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| Blaster ativo, velocidade 1×  | Cabine com **5 vidas**, **71 disparos** e **39 acertos**                           |
+| Blaster ativo, velocidade 20× | Cabine com **4 vidas**, **7 disparos** e **7 acertos**                             |
+| Verificação local             | **36 testes** aprovados, cobrindo previsão, controles, extensão, velocidade e arma |
 
-## Blaster — versão 0.5
+![Entrada na cabine com cinco vidas e os contadores do blaster](docs/media/result.png)
 
-O personagem agora carrega um blaster visível, com mira automática, projéteis luminosos, recuo e efeito de impacto. É um **mod local**: o jogo observado não tinha um sistema nativo de tiros. Um acerto remove somente o alvo atingido do motor, incluindo PRF, manifestantes, viaturas, fantasmas e o novo perseguidor Constituição. Não destrói a cancela nem o cenário.
+São resultados de partidas observadas no Brave, em dificuldade normal, em **28/10/2026**. As duas partidas da tabela usam o mod de arma; a segunda também modifica a velocidade. Não representam uma taxa de vitória garantida. O tempo entre quadros e mudanças no site podem alterar o comportamento.
 
-- **Iniciar tentativa:** o bot se move e atira automaticamente nos alvos próximos e visíveis.
-- **J:** segure para atirar manualmente, inclusive com o bot parado. O botão **Atirar · J** dispara uma vez. A mira continua automática.
-- **Auto: ligado/desligado:** controla o disparo automático do bot. O tiro manual continua disponível.
-- **Arma: ligada/desligada:** equipa ou desativa o blaster. Desativar cancela os projéteis em voo; alvos já removidos só retornam ao reiniciar/recarregar a partida.
-- **F8/Escape**, Parar, perda de foco e troca de aba interrompem o movimento do bot e cancelam o gatilho e os projéteis. Você pode voltar a atirar pressionando J novamente.
-- **V** esconde apenas as caixas; a arma e os tiros continuam visíveis. **G** recolhe os controles e mantém o contador de disparos/acertos.
+Os dados estão em [weapon-validation.json](reports/weapon-validation.json). O histórico dos experimentos e os limites da validação estão em [validation-notes.md](docs/validation-notes.md). O [vídeo completo em MP4](https://github.com/marlloncps/flavio-autoplayer/releases/latest) tem aproximadamente 28 segundos, sem áudio.
 
-Os registros JSON incluem disparos, acertos, tipos de alvo e eventos de impacto. A atualização também reconhece o novo perseguidor Constituição na previsão e nas caixas. A validação usa a dificuldade normal do site observado em 28/10/2026.
+## Explorar o código
 
-Se já usa a extensão, recarregue seu cartão em `brave://extensions`, recarregue o jogo e ative novamente pelo ícone. O pacote pronto está em `extension/`.
+| Arquivo                                    | Responsabilidade                               |
+| ------------------------------------------ | ---------------------------------------------- |
+| [`src/planner.js`](src/planner.js)         | Simulação e escolha dos movimentos             |
+| [`src/controller.js`](src/controller.js)   | Leitura do jogo, teclado, painel e interrupção |
+| [`src/overlay.js`](src/overlay.js)         | Caixas, câmera, rastro e indicadores           |
+| [`src/speed.js`](src/speed.js)             | Ajuste e restauração da velocidade             |
+| [`src/weapon.js`](src/weapon.js)           | Mira, projéteis, colisões e impactos           |
+| [`src/weapon-view.js`](src/weapon-view.js) | Desenho da arma, tiros e efeitos               |
+| [`extension/`](extension)                  | Pacote pronto para carregar no navegador       |
+| [`scripts/`](scripts)                      | Build e verificações em navegador real         |
+| [`test/`](test)                            | Testes automatizados                           |
 
-Para repetir o teste de tiro manual, interrupção, desativação e partidas automáticas a 1×/20×, execute `npm run verify:weapon` com o mesmo requisito de Playwright dos outros testes. Resultado em `reports/weapon-validation.json`.
-
-Na execução registrada com o blaster, chegou à cabine a 1× com **5 vidas, 71 disparos e 39 acertos**. A 20× chegou com 4 vidas. São resultados de partidas com o mod de arma ativo.
-
-## Permissões e limites
-
-A extensão pede `activeTab` e `scripting`, e só injeta código quando você clica no ícone na origem exata `https://cadeflavio.run`. Não usa servidores de IA, não envia registros e não lê outras abas. Você pode remover a extensão em `brave://extensions`.
-
-É específica para as regras do jogo observadas em 28/10/2026. Mudanças na estrutura dos dados são rejeitadas quando detectáveis; mudanças nas regras ou constantes podem exigir atualização do decisor. Não foi validada em celular, com controles simultâneos de uma pessoa, ou em outros jogos.
+Quer investigar os tiros? Comece por [`src/weapon.js`](src/weapon.js). Para entender as decisões, comece por [`src/planner.js`](src/planner.js). O arquivo `extension/bot.js` é gerado pelo build; faça alterações em `src/`.
 
 ## Desenvolvimento
 
-Requer Node.js 20+ para os testes e Brave no macOS para o comando de integração padrão.
+Use **Node.js 20+**. As dependências são necessárias para desenvolver e testar; a extensão pronta não depende delas no navegador.
 
 ```sh
+npm ci
 npm test
 npm run build
+npm run format:check
 ```
 
-O pacote do navegador não depende de bibliotecas. Para repetir o teste de navegador:
+Depois de editar `src/`, gere o bundle, recarregue a extensão e a página. `npm run format` padroniza a formatação dos arquivos do projeto. O GitHub Actions executa testes, checagem de formato e build, verificando se o pacote gerado está atualizado.
+
+### Verificação com o jogo real
+
+Os comandos abaixo abrem um **Brave temporário e isolado**, separado do seu perfil, acessam o site original e injetam o mesmo bundle da extensão. O caminho padrão do Brave é o do macOS; em outro ambiente, ajuste `BROWSER_PATH` para um navegador Chromium instalado e compatível com Playwright.
 
 ```sh
-npm install
-npm run verify
+npm run verify          # Controles, exportação e tentativa de travessia
+npm run verify:weapon   # Tiro manual, interrupção, desativação e partidas 1×/20×
+npm run verify:speed    # Velocidade, restauração e partidas 2×/3×
+npm run demo           # Visualização e gravação de uma partida
 ```
 
-`npm run demo` também verifica os controles visuais, salva imagens da partida em `reports/` e grava um WebM temporário. O caminho do vídeo aparece no relatório `reports/visual-validation.json`. Esse comando usa o mesmo navegador isolado e o mesmo requisito de Playwright do teste de integração.
+Essas verificações precisam de rede e dependem da versão atual do site; não rodam no CI. `PLAYWRIGHT_MODULE` permite apontar para outra instalação de Playwright. O guia detalhado está em [docs/usage.md](docs/usage.md).
 
-O teste abre um Brave temporário, separado do seu perfil, acessa o jogo real e injeta o mesmo pacote da extensão. Testa F8, Escape, entrada manual, tratamento do evento de perda de foco e exportação dos registros. Observa a partida até captura, entrada na cabine ou limite de tempo. Não instala a extensão no seu perfil. O carregador da extensão tem testes separados de roteamento; a instalação pelo painel do Brave ainda é uma etapa manual. Para outro executável, defina `BROWSER_PATH`; para usar Playwright já instalado, defina `PLAYWRIGHT_MODULE` com o caminho do pacote. `ATTEMPTS` limita tentativas (padrão 3, para no primeiro sucesso).
+## Permissões e créditos
 
-## Arquivos
+A extensão usa somente `activeTab` e `scripting`. A ativação acontece ao clicar no ícone e é limitada à origem exata `https://cadeflavio.run`. O bot não usa serviços de IA nem envia seus registros para um servidor.
 
-- `src/planner.js`: previsão do mundo e escolha do movimento.
-- `src/controller.js`: leitura, teclas, painel e interrupção.
-- `src/overlay.js`: caixas, câmera, rastro e indicação visual da ação.
-- `src/speed.js`: ajuste opcional e restauração da velocidade do personagem.
-- `src/weapon.js`: projéteis, mira e colisões com os alvos reais.
-- `src/weapon-view.js`: arma, tiros e efeitos de impacto sobre o jogo.
-- `extension/`: extensão pronta para carregar.
-- `scripts/build.mjs`: empacotamento sem dependências.
-- `scripts/verify.mjs`: validação no navegador real.
-- `reports/validation.json`: resultado registrado.
-- `reports/attempt-1.png`: imagem da entrada na cabine.
-- `test/`: testes de colisão, cancela, leitura e parada.
+- **Jogo original:** [Cadê o Flávio? — cadeflavio.run](https://cadeflavio.run/).
+- **Bot, visualizações e mods locais:** [marlloncps](https://github.com/marlloncps), com assistência do Codex.
+- **Licença do código deste projeto:** [MIT](LICENSE). A licença não se estende ao jogo original nem aos seus recursos.
 
-O código e os recursos originais do jogo não são redistribuídos neste projeto. O jogo permanece hospedado no site de seu autor.
+Contribuições e relatos de problemas são bem-vindos. Veja [CONTRIBUTING.md](CONTRIBUTING.md) para executar as verificações e propor uma mudança.

@@ -4,6 +4,6 @@
   "description": "Bot experimental que lê o estado de cadeflavio.run e joga por comandos de teclado.",
   "version": "0.5.0",
   "permissions": ["activeTab", "scripting"],
-  "action": {"default_title": "Ativar piloto no jogo do Flávio"},
-  "background": {"service_worker": "background.js"}
+  "action": { "default_title": "Ativar piloto no jogo do Flávio" },
+  "background": { "service_worker": "background.js" }
 }
