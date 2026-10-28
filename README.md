@@ -1,4 +1,4 @@
-# Flávio — piloto local
+# Flávio — piloto local · modo visual
 
 Protótipo de um bot que lê o estado real de [cadeflavio.run](https://cadeflavio.run/?debug), prevê colisões e joga usando comandos de teclado.
 
@@ -32,6 +32,22 @@ Para uma tentativa nova depois de chegar à cabine, recarregue a página e cliqu
 - Envia apenas as mudanças nas teclas necessárias, inclusive movimento diagonal.
 - Permite baixar os registros da tentativa em JSON. Mantém no máximo 6.000 registros em memória.
 
+## Caixas e modo de gravação — versão 0.2
+
+As caixas aparecem automaticamente durante a travessia. Cada tipo tem uma cor: verde para o personagem, azul para PRF, rosa para manifestantes, laranja para viaturas e roxo para fantasmas. Vermelho destaca proximidade. As etiquetas mostram o tipo e a distância em unidades do jogo.
+
+- **V** ou **Caixas: ligadas**: mostrar/esconder a camada visual.
+- **G** ou **Modo gravação**: recolher os controles para deixar o jogo em destaque. Pressione G novamente para expandir.
+- **Seta verde**: direção do comando atual, projetada por um curto intervalo. Não representa toda a sequência futura calculada pelo decisor.
+- **Rastro tracejado**: caminho que o personagem realmente percorreu.
+- **Contornos tracejados pequenos**: regiões de colisão do motor; as caixas maiores aproximam o tamanho visual dos desenhos.
+
+As caixas acompanham a câmera e o tamanho do jogo. O efeito de tremor do próprio jogo pode causar um pequeno deslocamento visual temporário. Não são detecções de visão computacional: usam os dados internos disponíveis no modo debug, como o restante do bot.
+
+**Se você já carregou a versão anterior:** em `brave://extensions`, clique em **Recarregar** no cartão da extensão. Depois recarregue a página do jogo e clique no ícone da extensão novamente. Não precisa selecionar a pasta de novo.
+
+Para gravar por conta própria, inicie a tentativa e pressione **G**. Use a gravação de tela do macOS (**⌘ Shift 5**) e mantenha o Brave em foco durante a partida. F8 e Escape continuam parando o bot.
+
 Esta versão usa um **controlador preditivo programado**, sem modelo treinado. Implementa a parte de leitura e controle discutida a partir do vídeo; integrar um modelo de decisões como Jev é trabalho futuro. A decisão pode ser trocada em `src/planner.js`, preservando o executor e a interrupção.
 
 ## Permissões e limites
@@ -56,12 +72,15 @@ npm install
 npm run verify
 ```
 
+`npm run demo` também verifica os controles visuais, salva imagens da partida em `reports/` e grava um WebM temporário. O caminho do vídeo aparece no relatório `reports/visual-validation.json`. Esse comando usa o mesmo navegador isolado e o mesmo requisito de Playwright do teste de integração.
+
 O teste abre um Brave temporário, separado do seu perfil, acessa o jogo real e injeta o mesmo pacote da extensão. Testa F8, Escape, entrada manual, tratamento do evento de perda de foco e exportação dos registros. Observa a partida até captura, entrada na cabine ou limite de tempo. Não instala a extensão no seu perfil. O carregador da extensão tem testes separados de roteamento; a instalação pelo painel do Brave ainda é uma etapa manual. Para outro executável, defina `BROWSER_PATH`; para usar Playwright já instalado, defina `PLAYWRIGHT_MODULE` com o caminho do pacote. `ATTEMPTS` limita tentativas (padrão 3, para no primeiro sucesso).
 
 ## Arquivos
 
 - `src/planner.js`: previsão do mundo e escolha do movimento.
 - `src/controller.js`: leitura, teclas, painel e interrupção.
+- `src/overlay.js`: caixas, câmera, rastro e indicação visual da ação.
 - `extension/`: extensão pronta para carregar.
 - `scripts/build.mjs`: empacotamento sem dependências.
 - `scripts/verify.mjs`: validação no navegador real.

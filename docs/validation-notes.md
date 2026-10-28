@@ -23,3 +23,14 @@
 - Task 1: complete — previsão, colisões e cancela; testes verdes.
 - Task 2: complete — ponte, teclas, painel, interrupção e extensão pronta.
 - Task 3: complete — partida real concluída, correção revisada, verificação final e pacote de entrega.
+
+## Atualização visual — versão 0.2
+
+- Pedido: caixas sobre obstáculos e uma apresentação mais visual para gravar e compartilhar.
+- Implementado: cores por tipo, distância em unidades do jogo, proximidade destacada, rastro observado, seta do comando atual, caixa da cancela e camada alinhada ao canvas do jogo.
+- V alterna as caixas; G recolhe os controles sem parar o bot. F8/Escape e entrada manual continuam interrompendo como antes.
+- Projeção da câmera, limites do mapa, descarte de objetos fora da tela e ausência de caixas na cabine têm testes. Suíte atual: 21 testes aprovados.
+- Revisão independente aprovou sem bloqueadores. Um detalhe do rastro foi corrigido: ocultar/reexibir limpa o histórico, evitando unir posições não observadas com um atalho visual falso. A caixa da cancela indica o estado de bloqueio e aproxima a animação do braço.
+- Duas partidas com a camada visual e gravação chegaram à cabine com 5 vidas. O teste verificou V, G, ausência de erros da página e alinhamento do canvas de 1280×720.
+- `reports/visual-validation.json` registra a última execução. `visual-preview.png` mostra as caixas durante a partida e `visual-result.png` comprova a entrada na cabine. O MP4 de demonstração é entregue separadamente, sem áudio.
+- Nenhuma alteração no decisor ou nas regras do jogo. A camada é somente visual e não recebe cliques.

@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-28T13:44:22.673Z",
+  "state": "cabin",
+  "status": {
+    "running": false,
+    "message": "Ponte concluída — entrou na cabine!",
+    "result": "cabin",
+    "decisions": 544,
+    "progress": 100,
+    "lives": 5,
+    "decisionMs": 0.5,
+    "action": {
+      "dx": 0,
+      "dy": 0
+    }
+  },
+  "overlayVisible": true,
+  "checks": {
+    "toggleBoxes": true,
+    "recordingMode": true,
+    "noPageErrors": true
+  },
+  "geometry": {
+    "game": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 720
+    },
+    "overlay": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "rawVideoPath": "/var/folders/tr/tzj1r8d116zbfkfsf7g9lxfh0000gn/T/flavio-visual-q7sCbK/page@c794d2965d4bd8c30a9c5bbc8d452b82.webm"
+}

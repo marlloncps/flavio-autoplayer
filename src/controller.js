@@ -1,4 +1,5 @@
 import { decide, validate } from './planner.js';
+import { installOverlay } from './overlay.js';
 
 export function readSnapshot(win) {
   const g=win.__game;
@@ -15,7 +16,7 @@ export function readSnapshot(win) {
 
 export function createController({read,send,every,cancel,now=()=>performance.now()}) {
   let timer=null,held=new Set(),started=0;
-  const logs=[],status={running:false,message:'Pronto',result:null,decisions:0,progress:0,lives:null,decisionMs:0};
+  const logs=[],status={running:false,message:'Pronto',result:null,decisions:0,progress:0,lives:null,decisionMs:0,action:{dx:0,dy:0}};
   function record(entry){logs.push({at:now(),...entry});if(logs.length>6000)logs.shift();}
   function apply(a){
     const desired=new Set();
@@ -27,7 +28,7 @@ export function createController({read,send,every,cancel,now=()=>performance.now
   }
   function stop(message='Parado pelo usuário'){
     status.running=false;if(timer!==null){cancel(timer);timer=null;}
-    apply({dx:0,dy:0});status.message=message;record({type:'stop',message,result:status.result});
+    apply({dx:0,dy:0});status.action={dx:0,dy:0};status.message=message;record({type:'stop',message,result:status.result});
   }
   function tick(){
     if(!status.running)return;
@@ -40,7 +41,7 @@ export function createController({read,send,every,cancel,now=()=>performance.now
       if(now()-started>120000){stop('Limite de 2 minutos atingido');return;}
       const t=now(),a=decide(s);status.decisionMs=now()-t;
       if(!Number.isFinite(a.dx)||!Number.isFinite(a.dy))throw new Error('Ação inválida');
-      apply(a);status.decisions++;status.message=a.reason;
+      apply(a);status.action={dx:a.dx,dy:a.dy};status.decisions++;status.message=a.reason;
       record({type:'decision',x:s.player.x,y:s.player.y,lives:s.player.lives,invuln:s.player.invuln,
         gate:s.gate,action:a,decisionMs:status.decisionMs,
         threats:[...s.enemies,...s.cars,...s.ghosts].filter(e=>Math.abs(e.x-s.player.x)<350)});
@@ -70,12 +71,33 @@ export function installBot(win,doc) {
     h2{font-size:16px;margin:0 0 8px}p{margin:7px 0}small{color:#a8bdd0;display:block}
     button{font:inherit;cursor:pointer;border:0;border-radius:7px;padding:8px 12px;margin:8px 4px 3px 0;color:#0b151f;background:#75e3b0}
     button.stop{background:#ffb9a8}button.export{background:#bbd5ef}#status{min-height:38px}#stats{font-variant-numeric:tabular-nums}
-  </style><section><h2>Flávio · piloto local</h2><small>Estado real → previsão → teclas</small>
+    button.visual{background:#253b50;color:#cce5fa;padding:6px 10px;font-size:12px}
+    button[aria-pressed="true"]{box-shadow:inset 0 0 0 1px #65f5c4}
+    :host(.recording){width:250px} :host(.recording) section{padding:12px;background:#0a1420de}
+    :host(.recording) .controls,:host(.recording) .help,:host(.recording) .subtitle{display:none}
+    :host(.recording) h2{font-size:14px;margin-bottom:4px}:host(.recording) #status{min-height:0}
+    :host(.recording) #record{padding:3px 0;background:none;color:#91adbf;box-shadow:none;font-size:10px;margin:0}
+  </style><section><h2>Flávio · piloto local</h2><small class="subtitle">Estado real → previsão → teclas</small>
     <p id="status" role="status">Pronto para jogar</p><p id="stats">—</p>
+    <div class="controls">
     <button id="start">Iniciar tentativa</button><button class="stop" id="stop">Parar</button>
     <button class="export" id="export">Baixar registros</button>
-    <small>F8 ou Escape para parar. Sair da aba também interrompe. Objetivo: entrar na cabine.</small></section>`;
+    <button class="visual" id="visual" aria-pressed="true">Caixas: ligadas · V</button></div>
+    <button class="visual" id="record" aria-pressed="false">Modo gravação · G</button>
+    <small class="help">F8 ou Escape para parar. V: caixas. G: recolher controles. Objetivo: entrar na cabine.</small></section>`;
   doc.documentElement.appendChild(host);
+  const overlay=installOverlay(win,doc,{read:()=>readSnapshot(win),getStatus:()=>controller.status});
+  controller.visuals=overlay;
+  const toggleVisual=()=>{
+    overlay.toggle();root.querySelector('#visual').setAttribute('aria-pressed',String(overlay.settings.enabled));
+    root.querySelector('#visual').textContent=`Caixas: ${overlay.settings.enabled?'ligadas':'desligadas'} · V`;
+  };
+  const toggleRecording=()=>{
+    const on=host.classList.toggle('recording');root.querySelector('#record').setAttribute('aria-pressed',String(on));
+    root.querySelector('#record').textContent=on?'Mostrar controles · G':'Modo gravação · G';
+  };
+  root.querySelector('#visual').addEventListener('click',toggleVisual);
+  root.querySelector('#record').addEventListener('click',toggleRecording);
   const update=()=>{
     root.querySelector('#status').textContent=controller.status.message;
     root.querySelector('#stats').textContent=`${controller.status.progress.toFixed(1)}% · ${controller.status.lives??'—'} vidas · ${controller.status.decisionMs.toFixed(1)} ms/decisão`;
@@ -90,7 +112,7 @@ export function installBot(win,doc) {
   });
   root.querySelector('#stop').addEventListener('click',()=>{controller.stop();update();});
   root.querySelector('#export').addEventListener('click',()=>{
-    const text=JSON.stringify({version:'0.1.0',date:new Date().toISOString(),status:controller.status,logs:controller.logs},null,2);
+    const text=JSON.stringify({version:'0.2.0',date:new Date().toISOString(),status:controller.status,logs:controller.logs},null,2);
     const url=win.URL.createObjectURL(new win.Blob([text],{type:'application/json'}));
     const link=doc.createElement('a');link.href=url;link.download='flavio-bot-partida.json';link.click();
     win.setTimeout(()=>win.URL.revokeObjectURL(url),1000);
@@ -98,6 +120,8 @@ export function installBot(win,doc) {
   const movementKeys=new Set(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d']);
   const emergency=e=>{
     if(e.key==='Escape'||e.key==='F8'){controller.stop('Interrompido por '+e.key);update();}
+    else if(e.type==='keydown'&&!e.repeat&&e.key.toLowerCase()==='v')toggleVisual();
+    else if(e.type==='keydown'&&!e.repeat&&e.key.toLowerCase()==='g')toggleRecording();
     else if(controller.status.running&&e.isTrusted&&movementKeys.has(e.key.toLowerCase())){
       controller.stop('Interrompido: controle manual detectado');update();
     }

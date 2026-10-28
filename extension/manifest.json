@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Flávio — piloto local",
   "description": "Bot experimental que lê o estado de cadeflavio.run e joga por comandos de teclado.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "permissions": ["activeTab", "scripting"],
   "action": {"default_title": "Ativar piloto no jogo do Flávio"},
   "background": {"service_worker": "background.js"}
